@@ -97,7 +97,10 @@
         return;
       }
       // Prevent a delayed save of the pre-restore state from overwriting imported data.
-      if (typeof mkSaveTimer !== 'undefined') clearTimeout(mkSaveTimer);
+      if (typeof mkSaveTimer !== 'undefined') {
+  clearTimeout(mkSaveTimer);
+  mkSaveTimer = null;
+}
       await MKStorage.save(structuredClone(data));
       status('復元データを保存しました。再読み込みします。');
       location.reload();
