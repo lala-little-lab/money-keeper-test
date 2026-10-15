@@ -353,7 +353,35 @@ function openAnalysisTrend(kind,category){const overlay=$('mkTrendOverlay');if(!
 const dates=txs.map(t=>typeof t.date==='string'&&/^\d{4}-\d{2}/.test(t.date)?t.date.slice(0,7):'').filter(Boolean);const earliest=dates.length?dates.sort()[0]:anchor;let all=[];for(let i=0;i<1200;i++){const m=mkTrendMonthOffset(anchor,-i);if(m<earliest)break;all.push(m)}$('mkTrendHistory').innerHTML=all.map(m=>`<div class="row mk-trend-history-row"><span class="mk-trend-history-meta"><span>${m.replace('-','年')}月</span><small>${mkBudgetLabel(m,kind==='expense'?undefined:category)}</small></span><strong>${yen(mkTrendValue(kind,m,category))}</strong></div>`).join('')||'<div class="small">記録はありません。</div>';overlay.classList.remove('hidden');$('mkTrendChart').scrollLeft=$('mkTrendChart').scrollWidth;}
 function mkTrendHighlight(el){el.parentElement.querySelectorAll('.mk-trend-column').forEach(x=>x.classList.remove('selected'));el.classList.add('selected')}
 function closeAnalysisTrend(){$('mkTrendOverlay').classList.add('hidden')}
-function renderBudget(){const month=analysisMonth,rows=analysisRows(month),tot=analysisTotals(month);$('analysisMonthLabel').textContent=month.replace('-','年')+'月';const shownBudget=mkBudgetAt(month);$('monthBudgetValue').textContent=shownBudget===null?'予算未設定':yen(shownBudget);$('monthSpend').textContent=yen(tot.expense);$('monthSpendBudget').textContent=yen(tot.expense);$('monthRemain').textContent=shownBudget===null?'予算未設定':yen(shownBudget-tot.expense);$('analysisIncome').textContent=yen(tot.income);$('analysisNet').textContent=yen(tot.income-tot.expense);$('monthBudgetProgress').style.width=(shownBudget?Math.min(100,tot.expense/shownBudget*100):0)+'%';const map={};rows.forEach(t=>{const v=analysisSpend(t);if(v>0){const c=analysisCat(t);map[c]=(map[c]||0)+v}});const names=[...new Set([...cats,...Object.keys(categoryBudgets),...Object.keys(categoryBudgetHistory[month]||{}),...Object.keys(map)])];$('budgetRows').innerHTML=names.map(c=>{const v=map[c]||0,b=mkBudgetAt(month,c);return `<div class="mk-category-row"><div class="row"><strong>${safeHtml(c)}</strong><span><strong>${yen(v)}</strong> <button class="ghost sm" onclick="openAnalysisTrend('category',decodeURIComponent('${encodeURIComponent(c)}'))">推移 ›</button></span></div>${b?`<div class="progress"><div style="width:${Math.min(100,v/b*100)}%"></div></div><div class="row small"><span>予算 ${yen(b)}</span><span class="${v>b?'mk-over-budget':''}">${v>b?'超過 '+yen(v-b):'残り '+yen(b-v)}</span></div>`:'<div class="small">予算未設定</div>'}</div>`}).join('')||'<div class="small">カテゴリはまだありません。</div>';}
+function renderBudget(){
+const month=analysisMonth,rows=analysisRows(month),tot=analysisTotals(month);
+$('analysisMonthLabel').textContent=month.replace('-','年')+'月';
+const b=mkBudgetAt(month);
+$('monthBudgetValue').textContent=b===null?'予算未設定':yen(b);
+$('monthSpend').textContent=yen(tot.expense);
+$('monthSpendBudget').textContent=yen(tot.expense);
+$('monthRemain').textContent=b===null?'予算未設定':yen(b-tot.expense);
+$('analysisIncome').textContent=yen(tot.income);
+$('analysisNet').textContent=yen(tot.income-tot.expense);
+$('monthBudgetProgress').style.setProperty('width',(b>0?Math.min(100,tot.expense/b*100):0)+'%','important');
+const map={};rows.forEach(t=>{const v=analysisSpend(t);if(v>0){const c=analysisCat(t);map[c]=(map[c]||0)+v}});
+const names=[...new Set([...cats,...Object.keys(categoryBudgets),...Object.keys(categoryBudgetHistory[month]||{}),...Object.keys(map)])];
+$('budgetRows').innerHTML=names.map(c=>{
+ const v=map[c]||0,b=mkBudgetAt(month,c),encoded=encodeURIComponent(c);
+ const edit=`<button class="ghost sm mk-category-action" onclick="editCategoryBudgetDirect(decodeURIComponent('${encoded}'))">編集</button>`;
+ const trend=`<button class="ghost sm mk-category-action" onclick="openAnalysisTrend('category',decodeURIComponent('${encoded}'))">推移 ›</button>`;
+ const bar=b>0?`<div class="progress mk-category-progress"><div style="width:${Math.min(100,v/b*100)}%"></div></div>`:'';
+ const budgetText=b===null||b===undefined?'予算未設定':'予算 '+yen(b);
+ const remain=b>0?`<span class="${v>b?'mk-over-budget':''}">${v>b?'超過 '+yen(v-b):'残り '+yen(b-v)}</span>`:'';
+ return `<div class="mk-category-row"><div class="row mk-category-top"><strong>${safeHtml(c)}</strong><span class="mk-category-spend"><span class="mk-category-muted">支出</span><strong>${yen(v)}</strong>${trend}</span></div>${bar}<div class="row mk-category-bottom"><span class="mk-category-budget"><span>${budgetText}</span>${edit}</span>${remain}</div></div>`;
+}).join('')||'<div class="small">カテゴリはまだありません。</div>';
+}
+function editCategoryBudgetDirect(c){
+ openMoneyPrompt(c+' の選択月の予算',Number(mkBudgetAt(analysisMonth,c)||0),(n)=>{
+ if(!categoryBudgetHistory[analysisMonth])categoryBudgetHistory[analysisMonth]={};
+ categoryBudgetHistory[analysisMonth][c]=n||null;renderAll();
+ },{min:0,hint:'選択月だけに保存。0円で未設定に戻します。'});
+}
 function editMonthlyBudget(){const existing=mkBudgetAt(analysisMonth);openMoneyPrompt('選択月の予算',existing===null?monthlyBudget:existing,(n)=>{monthlyBudgetHistory[analysisMonth]=n||null;monthlyBudget=n;renderAll()},{min:0,hint:'選択月だけに保存。0円で未設定に戻します。'})}
 function editCategoryBudget(){openPicker('予算を編集するカテゴリ',cats.map(c=>({label:c+(mkBudgetAt(analysisMonth,c)!==null?'（'+yen(mkBudgetAt(analysisMonth,c))+'）':'（未設定）'),value:c})),(c)=>{openMoneyPrompt(c+' の選択月の予算',Number(mkBudgetAt(analysisMonth,c)||0),(n)=>{if(!categoryBudgetHistory[analysisMonth])categoryBudgetHistory[analysisMonth]={};categoryBudgetHistory[analysisMonth][c]=n||null;renderAll()},{min:0,hint:'選択月だけに保存。0円で未設定に戻します。'})})}
 function eventUsed(e){return Number(e.baseSpent||0)+txs.filter(t=>t.eventTag===e.name).reduce((s,t)=>s+Number(t.amount||0),0)}

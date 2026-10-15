@@ -264,3 +264,18 @@
 .mk-analysis .card{background:#fff;border-radius:22px;padding:20px;margin-bottom:14px}.mk-analysis .mid{margin-bottom:12px}.mk-finance-pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mk-finance-tile{padding:16px;border-radius:15px;background:#f6f4f5;display:flex;flex-direction:column;gap:10px}.mk-finance-tile.pink{background:#fff0f5}.mk-finance-tile span{color:#80747a;font-size:13px}.mk-finance-tile strong{font-size:21px;color:#218b78}.mk-finance-tile.pink strong{color:#b8557d}.mk-net{margin-top:15px;padding-top:15px;border-top:1px solid var(--line)}.mk-total-budget{font-size:26px;font-weight:800;margin:8px 0 16px}.mk-trend-action{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin-top:12px}.mk-category-row{padding:14px 0;border-bottom:1px solid var(--line)}.mk-category-row:last-child{border-bottom:0}.mk-category-row .progress{margin:9px 0 6px}.mk-over-budget{color:#b94450;font-weight:700}.mk-trend-overlay{position:fixed;inset:0;z-index:999;background:#fff8fb;overflow:auto;padding:18px 12px 30px}.mk-trend-overlay.hidden{display:none}.mk-trend-panel{max-width:650px;margin:auto;background:white;border:1px solid var(--line);border-radius:22px;padding:17px}.mk-trend-chart{overflow-x:auto;overscroll-behavior-x:contain;padding:22px 0 10px}.mk-trend-plot{display:flex;align-items:flex-end;gap:9px;width:max-content;min-height:255px;border-bottom:1px solid #d6c8ce;padding:0 8px}.mk-trend-column{border:0;background:transparent;padding:0;display:flex;align-items:center;flex-direction:column;justify-content:flex-end;gap:7px;width:48px;color:#40353b;cursor:pointer}.mk-trend-bar{display:block;width:33px;min-height:2px;border-radius:10px 10px 0 0;background:#f4b6ce}.mk-trend-column.selected .mk-trend-bar{background:#d85c90}.mk-trend-amount{font-size:10px;white-space:nowrap;font-weight:700}.mk-trend-month{font-size:11px;white-space:nowrap}.mk-trend-history{max-height:310px;overflow-y:auto;overscroll-behavior:contain}.mk-trend-history-row{padding:12px 2px;border-bottom:1px solid var(--line)}
 
 .mk-trend-history-meta{display:flex;flex-direction:column;gap:4px}.mk-trend-history-meta small{color:#82777c;font-size:11px}
+
+.mk-budget-card .mid,.mk-categories-card .mid{margin-bottom:10px}
+.mk-budget-line{min-height:38px}
+.mk-budget-line>span{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.mk-budget-line strong{font-weight:750}
+.mk-budget-progress{margin:8px 0 9px}
+.mk-category-row{padding:12px 0}
+.mk-category-top{gap:6px}
+.mk-category-top>strong{min-width:0;overflow-wrap:anywhere}
+.mk-category-spend{display:flex;align-items:center;gap:6px;white-space:nowrap}
+.mk-category-muted{font-size:11px;color:var(--muted)}
+.mk-category-action{padding:5px 8px;font-size:11px;white-space:nowrap}
+.mk-category-progress{margin:8px 0 6px!important}
+.mk-category-bottom{font-size:12px;color:var(--muted);gap:6px;min-height:26px}
+.mk-category-budget{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
