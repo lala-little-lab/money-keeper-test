@@ -329,7 +329,32 @@ function saveRecurring(){let name=$('recName').value.trim(),amount=moneyNum($('r
 function editRecurring(i){let r=recurring[i];recurringEditIndex=i;toggleRecurringForm(true);$('recName').value=r.name;$('recAmount').value=r.amount;$('recTiming').value=r.timing;$('recRoute').value=r.route;recCategory=r.category||'';$('recCatBtn').firstElementChild.textContent=r.category||'支出集計対象外';recType=r.limited?'limited':'normal';document.querySelectorAll('#recTypeBtns .mini').forEach((b,j)=>b.classList.toggle('active',(j===1)===!!r.limited));$('limitedFields').classList.toggle('hidden',!r.limited);$('recCount').value=r.count||'';$('recMakeEvent').checked=!!r.event;refreshMoneyInputs();scrollTo(0,$('recurringForm').offsetTop-80)}
 function cancelRecurringEdit(){recurringEditIndex=-1;recType='normal';recCategory='';['recName','recAmount','recTiming','recRoute','recCount'].forEach(id=>$(id).value='');$('recCatBtn').firstElementChild.textContent='選んでください';$('recMakeEvent').checked=false;$('recError').textContent='';$('limitedFields').classList.add('hidden');document.querySelectorAll('#recTypeBtns .mini').forEach((b,j)=>b.classList.toggle('active',j===0));$('recurringForm').classList.add('hidden')}
 function toggleRecurringPause(i){recurring[i].paused=!recurring[i].paused;renderAll()}
-function renderBudget(){let spend=txs.filter(t=>['expense','lend','borrowed'].includes(t.type)).reduce((s,t)=>s+Number(t.amount||0),0)+txs.filter(t=>t.type==='transfer').reduce((s,t)=>s+Number(t.fee||0),0);$('monthBudgetValue').textContent=yen(monthlyBudget);$('monthSpend').textContent=yen(spend);$('monthRemain').textContent=yen(monthlyBudget-spend);$('budgetRows').innerHTML=cats.map(c=>{let u=txs.filter(t=>['expense','lend','borrowed'].includes(t.type)&&t.category===c).reduce((s,t)=>s+t.amount,0)+(c==='その他'?txs.filter(t=>t.type==='transfer').reduce((s,t)=>s+Number(t.fee||0),0):0),b=Number(categoryBudgets[c]||0);return`<div class="item"><div class="row"><strong>${c}</strong><span>${yen(u)}</span></div><div class="item-meta">${b?'仮予算 '+yen(b)+' ／ 残り '+yen(b-u):'仮予算未設定'}</div></div>`}).join('')}
+
+function renderBudget(){
+  const month = new Date().toLocaleDateString('sv-SE').slice(0,7);
+  const monthlyTxs = txs.filter(t => typeof t.date === 'string' && t.date.slice(0,7) === month);
+  const spend = monthlyTxs
+    .filter(t => ['expense','lend','borrowed'].includes(t.type))
+    .reduce((s,t) => s + Number(t.amount || 0), 0)
+    + monthlyTxs.filter(t => t.type === 'transfer')
+      .reduce((s,t) => s + Number(t.fee || 0), 0);
+
+  $('monthBudgetValue').textContent = yen(monthlyBudget);
+  $('monthSpend').textContent = yen(spend);
+  $('monthRemain').textContent = yen(monthlyBudget - spend);
+
+  $('budgetRows').innerHTML = cats.map(c => {
+    const u = monthlyTxs
+      .filter(t => ['expense','lend','borrowed'].includes(t.type) && t.category === c)
+      .reduce((s,t) => s + Number(t.amount || 0), 0)
+      + (c === 'その他'
+        ? monthlyTxs.filter(t => t.type === 'transfer')
+            .reduce((s,t) => s + Number(t.fee || 0), 0)
+        : 0);
+    const b = Number(categoryBudgets[c] || 0);
+    return `<div class="item"><div class="row"><strong>${c}</strong><span>${yen(u)}</span></div><div class="item-meta">${b ? '仮予算 '+yen(b)+' ／ 残り '+yen(b-u) : '仮予算未設定'}</div></div>`;
+  }).join('');
+}
 function editMonthlyBudget(){openMoneyPrompt('今月の仮予算',monthlyBudget,(n)=>{monthlyBudget=n;renderBudget()},{min:0})}
 function editCategoryBudget(){openPicker('予算を編集するカテゴリ',cats.map(c=>({label:c+(categoryBudgets[c]?'（'+yen(categoryBudgets[c])+'）':'（未設定）'),value:c})),(c)=>{openMoneyPrompt(c+' の仮予算',Number(categoryBudgets[c]||0),(n)=>{if(n===0)delete categoryBudgets[c];else categoryBudgets[c]=n;renderBudget()},{min:0,hint:'0円で未設定に戻します。'})})}
 function eventUsed(e){return Number(e.baseSpent||0)+txs.filter(t=>t.eventTag===e.name).reduce((s,t)=>s+Number(t.amount||0),0)}
