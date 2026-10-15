@@ -339,6 +339,7 @@ function analysisFixed(t){if(t.costType==='fixed'||t.costType==='variable')retur
 function analysisBar(label,value,max){return `<div class="analysis-bar-row"><span>${safeHtml(label)}</span><div class="analysis-bar-track"><i style="width:${max?Math.max(0,Math.min(100,value/max*100)):0}%"></i></div><strong>${yen(value)}</strong></div>`}
 function mkTrendMonthOffset(month,offset){const [y,m]=month.split('-').map(Number);const d=new Date(y,m-1+offset,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
 function mkTrendValue(kind,month,category){const rows=analysisRows(month);return rows.reduce((sum,t)=>{const v=analysisSpend(t);return sum+(kind==='expense'||analysisCat(t)===category?v:0)},0)}
+let mkInlineBudgetCategory=null;
 function mkBudgetAt(month,category){
   if(category===undefined)return Object.prototype.hasOwnProperty.call(monthlyBudgetHistory,month)?monthlyBudgetHistory[month]:null;
   const record=categoryBudgetHistory[month];
@@ -370,19 +371,35 @@ const map={};rows.forEach(t=>{const v=analysisSpend(t);if(v>0){const c=analysisC
 const names=[...new Set([...cats,...Object.keys(categoryBudgets),...Object.keys(categoryBudgetHistory[month]||{}),...Object.keys(map)])];
 $('budgetRows').innerHTML=names.map(c=>{
  const v=map[c]||0,b=mkBudgetAt(month,c),encoded=encodeURIComponent(c);
- const edit=`<button class="ghost sm mk-category-action" onclick="editCategoryBudgetDirect(decodeURIComponent('${encoded}'))">編集</button>`;
+ const expanded=mkInlineBudgetCategory===c;
+ const edit=`<button class="ghost sm mk-category-action" aria-expanded="${expanded}" onclick="editCategoryBudgetDirect(decodeURIComponent('${encoded}'))">${expanded?'閉じる ▲':'編集'}</button>`;
  const trend=`<button class="ghost sm mk-category-action" onclick="openAnalysisTrend('category',decodeURIComponent('${encoded}'))">推移 ›</button>`;
  const bar=b>0?`<div class="progress mk-category-progress"><div style="width:${Math.min(100,v/b*100)}%"></div></div>`:'';
  const budgetText=b===null||b===undefined?'予算未設定':'予算 '+yen(b);
  const remain=b>0?`<span class="${v>b?'mk-over-budget':''}">${v>b?'超過 '+yen(v-b):'残り '+yen(b-v)}</span>`:'';
- return `<div class="mk-category-row"><div class="row mk-category-top"><strong>${safeHtml(c)}</strong><span class="mk-category-spend"><span class="mk-category-muted">支出</span><strong>${yen(v)}</strong>${trend}</span></div>${bar}<div class="row mk-category-bottom"><span class="mk-category-budget"><span>${budgetText}</span>${edit}</span>${remain}</div></div>`;
+ return `<div class="mk-category-row"><div class="row mk-category-top"><strong>${safeHtml(c)}</strong><span class="mk-category-spend"><span class="mk-category-muted">支出</span><strong>${yen(v)}</strong>${trend}</span></div>${bar}<div class="row mk-category-bottom"><span class="mk-category-budget"><span>${budgetText}</span>${edit}</span>${remain}</div>${expanded?`<form class="mk-inline-budget" onsubmit="saveInlineCategoryBudget(event)"><label for="mkInlineBudgetAmount">選択月の予算</label><div class="mk-inline-budget-field"><span>¥</span><input id="mkInlineBudgetAmount" type="number" inputmode="decimal" min="0" step="1" autocomplete="off" value="${b===null||b===undefined?'':b}" placeholder="金額を入力"></div><div class="mk-inline-budget-actions"><button type="button" class="outline" onclick="cancelInlineCategoryBudget()">キャンセル</button><button type="submit" class="primary">決定</button></div><div class="small">0円で未設定に戻します。</div></form>`:''}</div>`;
 }).join('')||'<div class="small">カテゴリはまだありません。</div>';
 }
 function editCategoryBudgetDirect(c){
- openMoneyPrompt(c+' の選択月の予算',mkBudgetAt(analysisMonth,c),(n)=>{
+ mkInlineBudgetCategory=mkInlineBudgetCategory===c?null:c;
+ renderAnalysis();
+ if(mkInlineBudgetCategory){
+  const input=$('mkInlineBudgetAmount');
+  if(input){input.focus({preventScroll:true});requestAnimationFrame(()=>input.scrollIntoView({block:'center',behavior:'instant'}))}
+ }
+}
+function cancelInlineCategoryBudget(){mkInlineBudgetCategory=null;renderAnalysis()}
+function saveInlineCategoryBudget(e){
+ e.preventDefault();
+ const input=$('mkInlineBudgetAmount');
+ const raw=input?input.value.trim():'';
+ const n=raw===''?0:Number(raw);
+ if(!Number.isSafeInteger(n)||n<0){if(input)input.setCustomValidity('0以上の整数を入力してね');if(input)input.reportValidity();return}
  if(!categoryBudgetHistory[analysisMonth])categoryBudgetHistory[analysisMonth]={};
- categoryBudgetHistory[analysisMonth][c]=n||null;renderAll();
- },{min:0,allowBlankAsZero:true,hint:'選択月だけに保存。0円で未設定に戻します。'});
+ categoryBudgetHistory[analysisMonth][mkInlineBudgetCategory]=n||null;
+ mkInlineBudgetCategory=null;
+ if(document.activeElement&&document.activeElement.blur)document.activeElement.blur();
+ renderAll();
 }
 function editMonthlyBudget(){const existing=mkBudgetAt(analysisMonth);openMoneyPrompt('選択月の予算',existing===null?monthlyBudget:existing,(n)=>{monthlyBudgetHistory[analysisMonth]=n||null;monthlyBudget=n;renderAll()},{min:0,hint:'選択月だけに保存。0円で未設定に戻します。'})}
 function editCategoryBudget(){openPicker('予算を編集するカテゴリ',cats.map(c=>({label:c+(mkBudgetAt(analysisMonth,c)!==null?'（'+yen(mkBudgetAt(analysisMonth,c))+'）':'（未設定）'),value:c})),(c)=>{openMoneyPrompt(c+' の選択月の予算',mkBudgetAt(analysisMonth,c),(n)=>{if(!categoryBudgetHistory[analysisMonth])categoryBudgetHistory[analysisMonth]={};categoryBudgetHistory[analysisMonth][c]=n||null;renderAll()},{min:0,allowBlankAsZero:true,hint:'選択月だけに保存。0円で未設定に戻します。'})})}

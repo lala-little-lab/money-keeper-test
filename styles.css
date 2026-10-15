@@ -313,3 +313,12 @@
 /* Budget editor is confined to the visible viewport; only the sheet scrolls. */
 #moneyPromptModal{overscroll-behavior:contain;touch-action:none}
 #moneyPromptModal .sheet{max-height:100%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}
+
+/* Inline category budget editor: no overlay or background scroll locking. */
+.mk-inline-budget{margin-top:10px;padding:12px;border:1px solid #eadde2;border-radius:12px;background:#fffafc;display:flex;flex-direction:column;gap:8px}
+.mk-inline-budget label{font-size:13px;font-weight:600}
+.mk-inline-budget-field{display:flex;align-items:center;gap:8px;background:white;border:1px solid #dfd9de;border-radius:10px;padding:7px 12px}
+.mk-inline-budget-field span{font-weight:600;color:#777}
+.mk-inline-budget-field input{min-width:0;width:100%;border:0!important;background:transparent!important;box-shadow:none!important;font-size:18px;padding:4px 0!important;outline:none}
+.mk-inline-budget-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mk-inline-budget-actions button{min-height:40px}
