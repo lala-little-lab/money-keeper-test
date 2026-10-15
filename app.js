@@ -27,13 +27,14 @@ function attachMoneyInput(input){
 }
 function refreshMoneyInputs(){document.querySelectorAll('input[data-money-ready="1"]').forEach(input=>{if(document.activeElement!==input)formatMoneyElement(input)})}
 function initMoneyInputs(){document.querySelectorAll('input').forEach(input=>{if(MK_MONEY_FIELDS.has(input.id)||input.id.startsWith('actual-'))attachMoneyInput(input)})}
+let moneyPromptAllowBlank=false;
 function openMoneyPrompt(title,current,cb,opt={}){
- moneyPromptSave=cb;moneyPromptMin=opt.min??0;
+ moneyPromptSave=cb;moneyPromptMin=opt.min??0;moneyPromptAllowBlank=!!opt.allowBlankAsZero;
  $('moneyPromptTitle').textContent=title;$('moneyPromptValue').value=String(current??'');$('moneyPromptHint').textContent=opt.hint||'';$('moneyPromptError').textContent='';
  $('moneyPromptModal').classList.remove('hidden');initMoneyInputs();formatMoneyElement($('moneyPromptValue'));$('moneyPromptValue').focus();
 }
 function closeMoneyPrompt(){$('moneyPromptModal').classList.add('hidden');moneyPromptSave=null}
-function saveMoneyPrompt(){let input=$('moneyPromptValue');const raw=input.value,n=moneyNum(raw);if(!raw.trim()||!Number.isSafeInteger(n)||n<moneyPromptMin){$('moneyPromptError').textContent='金額を確認してね';return}const cb=moneyPromptSave;closeMoneyPrompt();if(cb)cb(n)}
+function saveMoneyPrompt(){let input=$('moneyPromptValue');const raw=input.value,n=raw.trim()?moneyNum(raw):(moneyPromptAllowBlank?0:NaN);if(!Number.isSafeInteger(n)||n<moneyPromptMin){$('moneyPromptError').textContent='金額を確認してね';return}const cb=moneyPromptSave;closeMoneyPrompt();if(cb)cb(n)}
 
 const cats=['食材','コンビニ','カフェ・外食','美容','化粧品・ボディケア・ネイル','服・靴・バッグ・アクセサリー','日用品','雑貨','医療','プロテイン・サプリ','トレーニング','交通・ガソリン','家族','推し活','宿泊','交際費','娯楽','その他'];
 const pays=[['cash','現金'],['paypay','PayPay'],['dpay','d払い'],['dcard','dカード'],['id','iD'],['rakuten','楽天カード'],['lumine','ルミネカード'],['epos','エポスカード'],['starbucks','Starbucks'],['suica','Suica'],['seibu','西武信用金庫'],['smbc','三井住友銀行'],['rakbank','楽天銀行'],['yucho','ゆうちょ'],['rakutenpay','楽天Pay'],['edy','楽天Edy'],['paypal','PayPal'],['other','その他']];
@@ -378,13 +379,13 @@ $('budgetRows').innerHTML=names.map(c=>{
 }).join('')||'<div class="small">カテゴリはまだありません。</div>';
 }
 function editCategoryBudgetDirect(c){
- openMoneyPrompt(c+' の選択月の予算',Number(mkBudgetAt(analysisMonth,c)||0),(n)=>{
+ openMoneyPrompt(c+' の選択月の予算',mkBudgetAt(analysisMonth,c),(n)=>{
  if(!categoryBudgetHistory[analysisMonth])categoryBudgetHistory[analysisMonth]={};
  categoryBudgetHistory[analysisMonth][c]=n||null;renderAll();
- },{min:0,hint:'選択月だけに保存。0円で未設定に戻します。'});
+ },{min:0,allowBlankAsZero:true,hint:'選択月だけに保存。0円で未設定に戻します。'});
 }
 function editMonthlyBudget(){const existing=mkBudgetAt(analysisMonth);openMoneyPrompt('選択月の予算',existing===null?monthlyBudget:existing,(n)=>{monthlyBudgetHistory[analysisMonth]=n||null;monthlyBudget=n;renderAll()},{min:0,hint:'選択月だけに保存。0円で未設定に戻します。'})}
-function editCategoryBudget(){openPicker('予算を編集するカテゴリ',cats.map(c=>({label:c+(mkBudgetAt(analysisMonth,c)!==null?'（'+yen(mkBudgetAt(analysisMonth,c))+'）':'（未設定）'),value:c})),(c)=>{openMoneyPrompt(c+' の選択月の予算',Number(mkBudgetAt(analysisMonth,c)||0),(n)=>{if(!categoryBudgetHistory[analysisMonth])categoryBudgetHistory[analysisMonth]={};categoryBudgetHistory[analysisMonth][c]=n||null;renderAll()},{min:0,hint:'選択月だけに保存。0円で未設定に戻します。'})})}
+function editCategoryBudget(){openPicker('予算を編集するカテゴリ',cats.map(c=>({label:c+(mkBudgetAt(analysisMonth,c)!==null?'（'+yen(mkBudgetAt(analysisMonth,c))+'）':'（未設定）'),value:c})),(c)=>{openMoneyPrompt(c+' の選択月の予算',mkBudgetAt(analysisMonth,c),(n)=>{if(!categoryBudgetHistory[analysisMonth])categoryBudgetHistory[analysisMonth]={};categoryBudgetHistory[analysisMonth][c]=n||null;renderAll()},{min:0,allowBlankAsZero:true,hint:'選択月だけに保存。0円で未設定に戻します。'})})}
 function eventUsed(e){return Number(e.baseSpent||0)+txs.filter(t=>t.eventTag===e.name).reduce((s,t)=>s+Number(t.amount||0),0)}
 function eventDateText(e){if(e.start&&e.end)return e.start.slice(5).replace('-','/')+'〜'+e.end.slice(5).replace('-','/');if(e.start)return e.start.slice(5).replace('-','/')+'〜';return '期間未設定'}
 function eventCard(e){let used=eventUsed(e),remain=e.budget?e.budget-used:null,open=openEventId===e.id,records=txs.filter(t=>t.eventTag===e.name),autoCats=[...new Set([...Object.keys(e.catBudgets||{}),...records.map(t=>t.category).filter(Boolean)])];return `<div class="card ${open?'eventcard':''}"><button class="event-head" onclick="toggleEvent('${e.id}')"><div class="event-summary"><div><div class="item-title">${e.name}</div><div class="item-meta">${eventDateText(e)}${e.budget?'　使用 '+yen(used)+' / 予算 '+yen(e.budget):'　使用 '+yen(used)}</div></div><span>${open?'▲':'▼'}</span></div></button>${open?`<div class="event-detail">${e.budget?`<div class="row"><span>総予算</span><strong>${yen(e.budget)}</strong></div><div class="row"><span>使用済み</span><strong>${yen(used)}</strong></div><div class="row"><span>残り</span><strong>${yen(remain)}</strong></div><div class="progress"><div style="width:${Math.min(100,used/e.budget*100)}%"></div></div>`:`<div class="row"><span>使用済み</span><strong>${yen(used)}</strong></div>`}<div class="subhead">カテゴリ別</div>${autoCats.length?autoCats.map(c=>{let u=records.filter(t=>t.category===c).reduce((s,t)=>s+Number(t.amount||0),0),b=Number((e.catBudgets||{})[c]||0);return `<div class="item"><div class="row"><strong>${c}</strong><span>${yen(u)}${b?' / '+yen(b):''}</span></div>${b?`<div class="item-meta">残り ${yen(b-u)}</div>`:''}</div>`}).join(''):'<div class="small">カテゴリ別の記録はまだありません。</div>'}<div class="subhead">最近の記録</div>${records.length?records.slice(0,6).map(t=>`<div class="item"><div class="row"><span>${t.category||recordTitle(t)}</span><strong>${yen(txAmount(t))}</strong></div><div style="margin-top:5px"><button class="ghost sm" onclick="editRecord('${t.id}')">編集</button> <button class="ghost sm danger" onclick="deleteHistoryRecord('${t.id}')">削除</button></div></div>`).join(''):'<div class="small">まだ記録はありません。</div>'}<div class="grid2" style="margin-top:10px"><button class="outline" onclick="editEvent('${e.id}')">編集</button><button class="outline" onclick="archiveEvent('${e.id}')">${e.archived?'元に戻す':'アーカイブ'}</button></div>${e.archived?`<button class="outline danger" style="width:100%;margin-top:7px" onclick="deleteEvent('${e.id}')">このイベントを削除</button>`:''}</div>`:''}</div>`}
@@ -506,6 +507,10 @@ mkBoot();
           const s=sheet.getBoundingClientRect();
           const needed=r.bottom+18-Math.min(s.bottom,visibleBottom);
           if(needed>0)sheet.scrollTop+=needed;
+          if(modal.id==='moneyPromptModal'){
+            const actions=sheet.querySelector('.grid2, .confirm-actions');
+            if(actions){const a=actions.getBoundingClientRect();const extra=a.bottom+12-visibleBottom;if(extra>0)sheet.scrollTop+=extra;}
+          }
         }
       }else if(r.bottom>visibleBottom-16 || r.top<vv.offsetTop+12){
         el.scrollIntoView({block:'center',behavior:'instant'});
@@ -514,7 +519,7 @@ mkBoot();
   }
   function queue(){if(pending)cancelAnimationFrame(pending);pending=requestAnimationFrame(adjust)}
   document.addEventListener('focusin',e=>{
-    if(e.target instanceof HTMLInputElement){active=e.target;queue();setTimeout(queue,120);setTimeout(queue,350)}
+    if(e.target instanceof HTMLInputElement){active=e.target;queue();setTimeout(queue,120);setTimeout(queue,350);setTimeout(queue,650)}
   });
   document.addEventListener('focusout',()=>{active=null;setTimeout(queue,120)});
   vv.addEventListener('resize',queue);
