@@ -15,7 +15,7 @@ function formatMoneyElement(input,keepCaret=false){
 }
 function attachMoneyInput(input){
  if(input.dataset.moneyReady==='1')return;
- input.dataset.moneyReady='1';input.type='text';input.inputMode='numeric';input.autocomplete='off';
+ input.dataset.moneyReady='1';input.type='text';input.inputMode='numeric';input.autocomplete='off';input.setAttribute('enterkeyhint','done');input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');input.spellcheck=false;
  let wrapper=input.parentElement;
  if(!wrapper.classList.contains('money-input')){
   wrapper=document.createElement('div');wrapper.className='money-input mk-money-input';
@@ -24,6 +24,8 @@ function attachMoneyInput(input){
  if(!wrapper.querySelector('.money-prefix')){let prefix=document.createElement('span');prefix.className='money-prefix';prefix.textContent='¥';wrapper.insertBefore(prefix,input)}
  input.addEventListener('input',()=>{formatMoneyElement(input,true);queueMicrotask(refreshMoneyInputs)});
  input.addEventListener('blur',()=>formatMoneyElement(input));
+ input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();formatMoneyElement(input);input.blur()}});
+
  formatMoneyElement(input);
 }
 function refreshMoneyInputs(){document.querySelectorAll('input[data-money-ready="1"]').forEach(input=>{if(document.activeElement!==input)formatMoneyElement(input)})}

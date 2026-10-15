@@ -299,3 +299,13 @@
  .mk-categories-card .mk-category-top{flex-wrap:wrap}
  .mk-categories-card .mk-category-spend{margin-left:auto}
 }
+
+/* Compact monthly income/expense summary, leaving other cards untouched */
+.mk-analysis .card:has(.mk-finance-pair){padding:15px 18px 13px}
+.mk-analysis .card:has(.mk-finance-pair) .mid{margin-bottom:9px}
+.mk-finance-pair{gap:9px}
+.mk-finance-tile{padding:11px 13px;gap:5px;border-radius:14px}
+.mk-finance-tile strong{font-size:20px}
+.mk-net{margin-top:10px;padding-top:10px}
+.bottom .nav-icon{height:25px}
+.bottom .nav-icon svg{width:24px;height:24px}
