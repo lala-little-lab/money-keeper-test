@@ -382,13 +382,13 @@ $('budgetRows').innerHTML=names.map(c=>{
 }
 function editCategoryBudgetDirect(c){
  mkInlineBudgetCategory=mkInlineBudgetCategory===c?null:c;
- renderAnalysis();
+ renderBudget();
  if(mkInlineBudgetCategory){
   const input=$('mkInlineBudgetAmount');
   if(input){input.focus({preventScroll:true});requestAnimationFrame(()=>input.scrollIntoView({block:'center',behavior:'instant'}))}
  }
 }
-function cancelInlineCategoryBudget(){mkInlineBudgetCategory=null;renderAnalysis()}
+function cancelInlineCategoryBudget(){mkInlineBudgetCategory=null;renderBudget()}
 function saveInlineCategoryBudget(e){
  e.preventDefault();
  const input=$('mkInlineBudgetAmount');
