@@ -279,3 +279,23 @@
 .mk-category-progress{margin:8px 0 6px!important}
 .mk-category-bottom{font-size:12px;color:var(--muted);gap:6px;min-height:26px}
 .mk-category-budget{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+
+/* Refinements agreed after mobile screenshots */
+.mk-budget-card .mk-budget-line{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;min-height:43px}
+.mk-budget-card .mk-budget-line>span{min-width:0;display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;font-size:14px}
+.mk-budget-card .mk-budget-line strong{font-size:15px}
+.mk-budget-card .mk-budget-line button{justify-self:end;min-width:52px;margin:2px 0}
+.mk-budget-card .mk-unset{font-size:12px!important;font-weight:500!important;color:#8a7f84}
+.mk-budget-card>.row:last-child{align-items:center;gap:10px}
+.mk-budget-card>.row:last-child strong{font-size:16px}
+.mk-categories-card .mk-category-row{padding:11px 0}
+.mk-categories-card .mk-category-top{align-items:center}
+.mk-categories-card .mk-category-top>strong{font-size:14px}
+.mk-categories-card .mk-category-spend{gap:5px}
+.mk-categories-card .mk-category-spend>strong{font-size:14px}
+.mk-categories-card .mk-category-bottom{font-size:12px;margin-top:3px}
+.mk-categories-card .mk-category-action{font-size:11px;padding:5px 8px;flex:none}
+@media(max-width:370px){
+ .mk-categories-card .mk-category-top{flex-wrap:wrap}
+ .mk-categories-card .mk-category-spend{margin-left:auto}
+}
