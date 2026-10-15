@@ -45,7 +45,7 @@ let eventsData=[];
 let loanActivePerson='',loanExpandedPerson='',lastSavedLoanPerson='',loanArchiveView=false,loanOrganize=false,loanAddToGroupId='',loanArchivedPeople=[],loanFoldAfter={},loanFoldExpanded={},loanSelectedIds=new Set(),histMoreOpen=false;
 let loanExtraPerson='',loanExtraDirection='lend';
 let loanGroups=[],loanGroupSerial=0;
-let txs=[],loans=[],cashbook=[],snapshots=[],wishes=[],billAdjustments={},billItemAdjustments={},deletedEventNames=[],mode='expense',loanKind='lend',loanSection='advance',category='',payment='',eventTag='',discount=0,installments=1,from='',to='',chargeTarget='',chargeSource='',histTab='spend',histType='all',histCat='',histPay='',histEvent='',histPeriod='',histStart='',histEnd='',histKeyword='',editingId='',openEventId='',newEventCat='',newEventCatBudgets={},recType='normal',recCategory='',recurringEditIndex=-1,monthlyBudget=190000,transferFeeSide='from',chargeDefaults={paypay:'seibu',suica:'lumine',starbucks:'dcard'},categoryBudgets={};
+let txs=[],loans=[],cashbook=[],snapshots=[],wishes=[],billAdjustments={},billItemAdjustments={},deletedEventNames=[],mode='expense',loanKind='lend',loanSection='advance',category='',payment='',eventTag='',discount=0,installments=1,from='',to='',chargeTarget='',chargeSource='',histTab='spend',histType='all',histCat='',histPay='',histEvent='',histPeriod='',histStart='',histEnd='',histKeyword='',editingId='',openEventId='',newEventCat='',newEventCatBudgets={},recType='normal',recCategory='',recurringEditIndex=-1,monthlyBudget=190000,transferFeeSide='from',chargeDefaults={paypay:'seibu',suica:'lumine',starbucks:'dcard'},categoryBudgets={},analysisMonth=new Date().toLocaleDateString('sv-SE').slice(0,7);
 const $=id=>document.getElementById(id),yen=n=>'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');$('date').value=new Date().toISOString().slice(0,10);
 function nav(id,b){document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');scrollTo(0,0)}function openOther(id){nav(id,document.querySelectorAll('.nav')[5])}function backOther(){nav('other',document.querySelectorAll('.nav')[5])}function openLoansFromOther(){loanExpandedPerson='';loanActivePerson='';loanArchiveView=false;loanOrganize=false;loanAddToGroupId='';loanSelectedIds.clear();openOther('loans');renderLoans()}
 function total(){return Object.values(balances).reduce((s,x)=>s+x.v,0)}function renderBalances(){$('cashTotal').textContent=yen(total());$('prePay').textContent=yen(total());$('balanceList').innerHTML=Object.values(balances).map(x=>`<div class="row item"><span>${x.name}</span><strong>${yen(x.v)}</strong></div>`).join('')}
@@ -330,30 +330,29 @@ function editRecurring(i){let r=recurring[i];recurringEditIndex=i;toggleRecurrin
 function cancelRecurringEdit(){recurringEditIndex=-1;recType='normal';recCategory='';['recName','recAmount','recTiming','recRoute','recCount'].forEach(id=>$(id).value='');$('recCatBtn').firstElementChild.textContent='選んでください';$('recMakeEvent').checked=false;$('recError').textContent='';$('limitedFields').classList.add('hidden');document.querySelectorAll('#recTypeBtns .mini').forEach((b,j)=>b.classList.toggle('active',j===0));$('recurringForm').classList.add('hidden')}
 function toggleRecurringPause(i){recurring[i].paused=!recurring[i].paused;renderAll()}
 
+function analysisMonthMove(n){const [y,m]=analysisMonth.split('-').map(Number);const d=new Date(y,m-1+n,1);analysisMonth=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');renderBudget()}
+function analysisSpend(t){return ['expense','lend','borrowed'].includes(t.type)?Number(t.amount||0):t.type==='transfer'?Number(t.fee||0):0}
+function analysisRows(month){return txs.filter(t=>typeof t.date==='string'&&t.date.slice(0,7)===month)}
+function analysisTotals(month){const a=analysisRows(month);return {expense:a.reduce((s,t)=>s+analysisSpend(t),0),income:a.filter(t=>t.type==='income').reduce((s,t)=>s+Number(t.amount||0),0)}}
+function analysisCat(t){return t.type==='transfer'?'その他':t.category||'その他'}
+function analysisFixed(t){if(t.costType==='fixed'||t.costType==='variable')return t.costType==='fixed';return /家賃|通信|携帯|保険|サブスク|定期|ジム|医療|病院|薬|Netflix|U-NEXT|Microsoft/i.test(analysisCat(t))}
+function analysisBar(label,value,max){return `<div class="analysis-bar-row"><span>${safeHtml(label)}</span><div class="analysis-bar-track"><i style="width:${max?Math.max(0,Math.min(100,value/max*100)):0}%"></i></div><strong>${yen(value)}</strong></div>`}
 function renderBudget(){
-  const month = new Date().toLocaleDateString('sv-SE').slice(0,7);
-  const monthlyTxs = txs.filter(t => typeof t.date === 'string' && t.date.slice(0,7) === month);
-  const spend = monthlyTxs
-    .filter(t => ['expense','lend','borrowed'].includes(t.type))
-    .reduce((s,t) => s + Number(t.amount || 0), 0)
-    + monthlyTxs.filter(t => t.type === 'transfer')
-      .reduce((s,t) => s + Number(t.fee || 0), 0);
-
-  $('monthBudgetValue').textContent = yen(monthlyBudget);
-  $('monthSpend').textContent = yen(spend);
-  $('monthRemain').textContent = yen(monthlyBudget - spend);
-
-  $('budgetRows').innerHTML = cats.map(c => {
-    const u = monthlyTxs
-      .filter(t => ['expense','lend','borrowed'].includes(t.type) && t.category === c)
-      .reduce((s,t) => s + Number(t.amount || 0), 0)
-      + (c === 'その他'
-        ? monthlyTxs.filter(t => t.type === 'transfer')
-            .reduce((s,t) => s + Number(t.fee || 0), 0)
-        : 0);
-    const b = Number(categoryBudgets[c] || 0);
-    return `<div class="item"><div class="row"><strong>${c}</strong><span>${yen(u)}</span></div><div class="item-meta">${b ? '仮予算 '+yen(b)+' ／ 残り '+yen(b-u) : '仮予算未設定'}</div></div>`;
-  }).join('');
+ const month=analysisMonth,rows=analysisRows(month),tot=analysisTotals(month),prevDate=new Date(Number(month.slice(0,4)),Number(month.slice(5))-2,1),prev=prevDate.getFullYear()+'-'+String(prevDate.getMonth()+1).padStart(2,'0'),pt=analysisTotals(prev);
+ $('analysisMonthLabel').textContent=month.replace('-','年')+'月';
+ $('monthBudgetValue').textContent=yen(monthlyBudget);$('monthSpend').textContent=yen(tot.expense);$('monthRemain').textContent=yen(monthlyBudget-tot.expense);
+ $('analysisIncome').textContent=yen(tot.income);$('analysisNet').textContent=yen(tot.income-tot.expense);
+ $('analysisPrev').textContent=yen(pt.expense)+' → '+yen(tot.expense)+'（'+(tot.expense-pt.expense>=0?'+':'')+yen(tot.expense-pt.expense)+'）';
+ const catMap={};rows.forEach(t=>{const v=analysisSpend(t);if(v>0){const c=analysisCat(t);catMap[c]=(catMap[c]||0)+v}});
+ const catsSorted=Object.entries(catMap).sort((a,b)=>b[1]-a[1]);let angle=0;const palette=['#cf648f','#f0a8c0','#a78cae','#f2c6a0','#8fa6bd','#a3bda9','#e2b6dd','#9b9baf'];const parts=catsSorted.map(([c,v],i)=>{const start=angle;angle+=v/tot.expense*100;return `${palette[i%palette.length]} ${start}% ${angle}%`});
+ $('analysisDonut').style.background=parts.length?'conic-gradient('+parts.join(',')+')':'#f2e9ed';
+ $('budgetRows').innerHTML=catsSorted.length?catsSorted.map(([c,v],i)=>`<div class="row item"><span><i class="analysis-dot" style="background:${palette[i%palette.length]}"></i>${safeHtml(c)}</span><strong>${yen(v)} <small>${tot.expense?Math.round(v/tot.expense*100):0}%</small></strong></div>`).join(''):'<div class="small">この月の支出はありません。</div>';
+ const months=Number($('analysisPeriod').value||6),monthList=Array.from({length:months},(_,i)=>{const d=new Date(Number(month.slice(0,4)),Number(month.slice(5))-months+i,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')});
+ const trend=monthList.map(m=>({month:m,...analysisTotals(m)})),max=Math.max(1,...trend.map(x=>x.expense));$('analysisMonthlyTrend').innerHTML=trend.map(x=>analysisBar(x.month.slice(5)+'月',x.expense,max)).join('');
+ const allCats=[...new Set(monthList.flatMap(m=>analysisRows(m).filter(t=>analysisSpend(t)>0).map(analysisCat)))];$('analysisCategoryTrend').innerHTML=allCats.length?allCats.map(c=>`<div class="analysis-trend-category"><strong>${safeHtml(c)}</strong>${monthList.map(m=>analysisBar(m.slice(5)+'月',analysisRows(m).filter(t=>analysisCat(t)===c).reduce((v,t)=>v+analysisSpend(t),0),Math.max(1,...monthList.map(mm=>analysisRows(mm).filter(t=>analysisCat(t)===c).reduce((v,t)=>v+analysisSpend(t),0))))).join('')}</div>`).join(''):'<div class="small">対象期間の記録はありません。</div>';
+ const pay={};rows.forEach(t=>{const v=analysisSpend(t);if(v>0){const k=t.payment||t.from||'その他';pay[k]=(pay[k]||0)+v}});$('analysisPayment').innerHTML=Object.entries(pay).sort((a,b)=>b[1]-a[1]).map(([k,v])=>analysisBar(k,v,tot.expense)).join('')||'<div class="small">記録なし</div>';
+ $('analysisIncomeExpense').innerHTML=trend.map(x=>`<div class="item"><strong>${x.month.slice(5)}月</strong>${analysisBar('収入',x.income,Math.max(x.income,x.expense,1))}${analysisBar('支出',x.expense,Math.max(x.income,x.expense,1))}</div>`).join('');
+ const fixed=rows.filter(analysisFixed).reduce((v,t)=>v+analysisSpend(t),0);$('analysisFixed').textContent=yen(fixed);$('analysisVariable').textContent=yen(tot.expense-fixed);
 }
 function editMonthlyBudget(){openMoneyPrompt('今月の仮予算',monthlyBudget,(n)=>{monthlyBudget=n;renderBudget()},{min:0})}
 function editCategoryBudget(){openPicker('予算を編集するカテゴリ',cats.map(c=>({label:c+(categoryBudgets[c]?'（'+yen(categoryBudgets[c])+'）':'（未設定）'),value:c})),(c)=>{openMoneyPrompt(c+' の仮予算',Number(categoryBudgets[c]||0),(n)=>{if(n===0)delete categoryBudgets[c];else categoryBudgets[c]=n;renderBudget()},{min:0,hint:'0円で未設定に戻します。'})})}

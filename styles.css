@@ -257,3 +257,6 @@
 /* Step9.5: 履歴の編集・削除を各記録の右下に固定 */
 .history-item-sub{align-items:stretch}
 .history-actions{align-self:flex-end;margin:0;flex:none}
+
+/* Analytics and bottom navigation additions */
+.bottom .nav{font-family:Arial,"Noto Sans JP",sans-serif;font-weight:650;letter-spacing:0} .bottom .nav-icon{display:block;height:25px;margin-bottom:3px;color:#444348}.bottom .nav-icon svg{height:24px;width:24px}.bottom .nav.active .nav-icon{color:#bf477a}.analysis-donut{height:176px;width:176px;border-radius:50%;margin:16px auto;display:grid;place-items:center}.analysis-donut>div{width:105px;height:105px;background:#fff;border-radius:50%}.analysis-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px}.analysis-bar-row{display:grid;grid-template-columns:65px 1fr auto;gap:8px;align-items:center;margin:9px 0;font-size:12px}.analysis-bar-row strong{font-size:12px}.analysis-bar-track{height:9px;background:#f5eaf0;border-radius:20px;overflow:hidden}.analysis-bar-track i{display:block;height:100%;background:#d77fa3;border-radius:20px}.analysis-trend-category{padding:10px 0;border-top:1px solid #f0e5e9}
