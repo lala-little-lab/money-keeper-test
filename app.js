@@ -471,41 +471,38 @@ async function mkBoot(){
 }
 mkBoot();
 
-/* Keyboard-aware budget sheet: position against the visible viewport, not the
-   document's previous scroll direction. Keep this isolated to the money prompt. */
-(function mkStableBudgetSheet(){
-  const vv=window.visualViewport;
-  if(!vv)return;
-  let raf=0;
-  function update(){
-    raf=0;
-    const modal=document.getElementById('moneyPromptModal');
-    if(!modal)return;
-    if(modal.classList.contains('hidden')){
-      modal.classList.remove('mk-keyboard-open');
-      modal.style.removeProperty('--mk-keyboard-inset');
-      return;
-    }
-    const input=document.getElementById('moneyPromptValue');
-    const keyboardHeight=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
-    const keyboardOpen=keyboardHeight>110 && document.activeElement===input;
-    modal.classList.toggle('mk-keyboard-open',keyboardOpen);
-    if(!keyboardOpen){modal.style.removeProperty('--mk-keyboard-inset');return;}
-    modal.style.setProperty('--mk-keyboard-inset',keyboardHeight+'px');
-    // Always reset the sheet's own scroll. The entire sheet should sit above
-    // the keyboard, including the Save button, independent of page scroll.
-    const sheet=modal.querySelector('.sheet');
-    if(sheet)sheet.scrollTop=0;
+/* Budget modal uses the visual viewport itself rather than scrolling the page.
+   Keep the background stationary; backdrop taps still dismiss the modal. */
+(function mkBudgetViewportModal(){
+ const modal=document.getElementById('moneyPromptModal');
+ if(!modal)return;
+ const vv=window.visualViewport;
+ let raf=0,locked=false,oldBodyOverflow='',oldHtmlOverflow='';
+ function update(){
+  raf=0;
+  const open=!modal.classList.contains('hidden');
+  if(!open){
+   modal.style.removeProperty('top');
+   modal.style.removeProperty('height');
+   modal.style.removeProperty('bottom');
+   if(locked){document.body.style.overflow=oldBodyOverflow;document.documentElement.style.overflow=oldHtmlOverflow;locked=false;}
+   return;
   }
-  function queue(){if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(update)}
-  document.addEventListener('focusin',e=>{
-    if(e.target?.id==='moneyPromptValue'){
-      queue();[80,180,350,650,950].forEach(ms=>setTimeout(queue,ms));
-    }
-  });
-  document.addEventListener('focusout',e=>{if(e.target?.id==='moneyPromptValue')setTimeout(queue,100)});
-  vv.addEventListener('resize',queue);
-  vv.addEventListener('scroll',queue);
-  window.addEventListener('resize',queue);
-  new MutationObserver(queue).observe(document.getElementById('moneyPromptModal'),{attributes:true,attributeFilter:['class']});
+  if(!locked){oldBodyOverflow=document.body.style.overflow;oldHtmlOverflow=document.documentElement.style.overflow;document.body.style.overflow='hidden';document.documentElement.style.overflow='hidden';locked=true;}
+  // On Android the keyboard reduces visualViewport.height. Position the entire
+  // sheet in that visible region; do not use scrollIntoView or page scroll.
+  const top=vv?vv.offsetTop:0;
+  const height=vv?vv.height:window.innerHeight;
+  modal.style.top=top+'px';
+  modal.style.height=height+'px';
+  modal.style.bottom='auto';
+ }
+ function queue(){if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(update)}
+ new MutationObserver(()=>{queue();setTimeout(queue,90);setTimeout(queue,280);setTimeout(queue,550)}).observe(modal,{attributes:true,attributeFilter:['class']});
+ if(vv){vv.addEventListener('resize',queue);vv.addEventListener('scroll',queue)}
+ window.addEventListener('resize',queue);
+ document.addEventListener('focusin',e=>{if(modal.contains(e.target)){queue();setTimeout(queue,130);setTimeout(queue,400)}});
+ // Do not allow touch gestures on the dim backdrop to scroll the page.
+ modal.addEventListener('touchmove',e=>{if(e.target===modal)e.preventDefault()},{passive:false});
+ queue();
 })();

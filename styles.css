@@ -310,10 +310,6 @@
 .bottom .nav-icon{height:25px}
 .bottom .nav-icon svg{width:24px;height:24px}
 
-/* Keep an open bottom sheet clear of the Android software keyboard. */
-.modal.mk-keyboard-open{bottom:var(--mk-keyboard-inset,0px)}
-.modal.mk-keyboard-open .sheet{max-height:calc(100% - 12px);overscroll-behavior:contain}
-
-/* Budget modal: anchor its bottom above the keyboard regardless of page scroll. */
-#moneyPromptModal.mk-keyboard-open{bottom:var(--mk-keyboard-inset,0px)}
-#moneyPromptModal.mk-keyboard-open .sheet{max-height:100%;overflow-y:auto}
+/* Budget editor is confined to the visible viewport; only the sheet scrolls. */
+#moneyPromptModal{overscroll-behavior:contain;touch-action:none}
+#moneyPromptModal .sheet{max-height:100%;overflow-y:auto;overscroll-behavior:contain;touch-action:pan-y;-webkit-overflow-scrolling:touch}

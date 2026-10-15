@@ -9,3 +9,5 @@ This is a **local test build**, not production-ready. Do not enter real personal
 - Use only fictional amounts and verify refresh persistence in Galaxy Chrome.
 - Do not publish this draft over the production site before full regression tests.
 - Never commit personal finance records or backups to public GitHub.
+
+Budget modal viewport test: lock background scrolling while keeping backdrop tap to dismiss; size modal to visual viewport above keyboard.
