@@ -469,3 +469,55 @@ async function mkBoot(){
   new MutationObserver(()=>initMoneyInputs()).observe(document.body,{childList:true,subtree:true});
 }
 mkBoot();
+
+/* Input visibility: respond to the visual viewport, without changing Enter behavior. */
+(function mkKeepAmountFieldsVisible(){
+  const vv=window.visualViewport;
+  if(!vv)return;
+  let active=null;
+  let pending=0;
+  function adjust(){
+    pending=0;
+    const el=document.activeElement;
+    const isMoney=el instanceof HTMLInputElement &&
+      (el.closest('.money-input') || el.inputMode==='numeric' || el.type==='number');
+    const modal=isMoney && el.closest('.modal:not(.hidden)');
+    document.querySelectorAll('.modal.mk-keyboard-open').forEach(m=>{
+      if(m!==modal){m.classList.remove('mk-keyboard-open');m.style.removeProperty('--mk-keyboard-inset')}
+    });
+    if(!isMoney)return;
+    const covered=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    const keyboardVisible=covered>110;
+    if(modal && keyboardVisible){
+      modal.classList.add('mk-keyboard-open');
+      modal.style.setProperty('--mk-keyboard-inset',covered+'px');
+    }else if(modal){
+      modal.classList.remove('mk-keyboard-open');
+      modal.style.removeProperty('--mk-keyboard-inset');
+    }
+    if(!keyboardVisible)return;
+    requestAnimationFrame(()=>{
+      if(document.activeElement!==el)return;
+      const visibleBottom=vv.offsetTop+vv.height;
+      const r=el.getBoundingClientRect();
+      if(modal){
+        const sheet=el.closest('.sheet');
+        if(sheet){
+          const s=sheet.getBoundingClientRect();
+          const needed=r.bottom+18-Math.min(s.bottom,visibleBottom);
+          if(needed>0)sheet.scrollTop+=needed;
+        }
+      }else if(r.bottom>visibleBottom-16 || r.top<vv.offsetTop+12){
+        el.scrollIntoView({block:'center',behavior:'instant'});
+      }
+    });
+  }
+  function queue(){if(pending)cancelAnimationFrame(pending);pending=requestAnimationFrame(adjust)}
+  document.addEventListener('focusin',e=>{
+    if(e.target instanceof HTMLInputElement){active=e.target;queue();setTimeout(queue,120);setTimeout(queue,350)}
+  });
+  document.addEventListener('focusout',()=>{active=null;setTimeout(queue,120)});
+  vv.addEventListener('resize',queue);
+  vv.addEventListener('scroll',queue);
+  window.addEventListener('resize',queue);
+})();
