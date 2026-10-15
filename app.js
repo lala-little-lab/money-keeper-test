@@ -3,7 +3,7 @@ let moneyPromptSave=null,moneyPromptMin=0;
 function moneyNum(value){if(typeof value==='number')return Number.isFinite(value)?value:0;const raw=String(value??'').replace(/[¥￥,，\s]/g,'').replace(/[^0-9.\-]/g,'');return Math.trunc(Number(raw))||0}
 function moneyFormatted(value){const raw=String(value??'').replace(/[−－]/g,'-');let neg=raw.trim().startsWith('-')?'-':'';let digits=raw.split('.')[0].replace(/\D/g,'');if(!digits)return neg;return neg+Number(digits).toLocaleString('ja-JP')}
 function formatMoneyElement(input,keepCaret=false){
- if(!input||input.dataset.moneyReady!=='1')return;
+ if(!input||input.dataset.moneyReady!=='1'||input.type==='number')return;
  const original=input.value;
  if(!original)return;
  const next=moneyFormatted(original);
@@ -15,18 +15,15 @@ function formatMoneyElement(input,keepCaret=false){
 }
 function attachMoneyInput(input){
  if(input.dataset.moneyReady==='1')return;
- input.dataset.moneyReady='1';input.type='text';input.inputMode='numeric';input.autocomplete='off';input.setAttribute('enterkeyhint','done');input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');input.spellcheck=false;
+ input.dataset.moneyReady='1';input.type='number';input.inputMode='decimal';input.autocomplete='off';
  let wrapper=input.parentElement;
  if(!wrapper.classList.contains('money-input')){
   wrapper=document.createElement('div');wrapper.className='money-input mk-money-input';
   input.parentNode.insertBefore(wrapper,input);wrapper.appendChild(input);
  }else wrapper.classList.add('mk-money-input');
  if(!wrapper.querySelector('.money-prefix')){let prefix=document.createElement('span');prefix.className='money-prefix';prefix.textContent='¥';wrapper.insertBefore(prefix,input)}
- input.addEventListener('input',()=>{formatMoneyElement(input,true);queueMicrotask(refreshMoneyInputs)});
- input.addEventListener('blur',()=>formatMoneyElement(input));
- input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();formatMoneyElement(input);input.blur()}});
-
- formatMoneyElement(input);
+ // Native number fields: no comma formatting while typing and no custom Enter handler.
+ input.addEventListener('input',()=>queueMicrotask(refreshMoneyInputs));
 }
 function refreshMoneyInputs(){document.querySelectorAll('input[data-money-ready="1"]').forEach(input=>{if(document.activeElement!==input)formatMoneyElement(input)})}
 function initMoneyInputs(){document.querySelectorAll('input').forEach(input=>{if(MK_MONEY_FIELDS.has(input.id)||input.id.startsWith('actual-'))attachMoneyInput(input)})}
