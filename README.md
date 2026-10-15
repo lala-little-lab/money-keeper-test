@@ -11,3 +11,4 @@ This is a **local test build**, not production-ready. Do not enter real personal
 - Never commit personal finance records or backups to public GitHub.
 
 Budget modal viewport test: lock background scrolling while keeping backdrop tap to dismiss; size modal to visual viewport above keyboard.
+Test deployment retry 2026-10-16
