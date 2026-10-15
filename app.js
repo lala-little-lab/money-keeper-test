@@ -31,7 +31,7 @@ let moneyPromptAllowBlank=false;
 function openMoneyPrompt(title,current,cb,opt={}){
  moneyPromptSave=cb;moneyPromptMin=opt.min??0;moneyPromptAllowBlank=!!opt.allowBlankAsZero;
  $('moneyPromptTitle').textContent=title;$('moneyPromptValue').value=String(current??'');$('moneyPromptHint').textContent=opt.hint||'';$('moneyPromptError').textContent='';
- $('moneyPromptModal').classList.remove('hidden');initMoneyInputs();formatMoneyElement($('moneyPromptValue'));$('moneyPromptValue').focus();
+ $('moneyPromptModal').classList.remove('hidden');initMoneyInputs();formatMoneyElement($('moneyPromptValue'));$('moneyPromptValue').focus({preventScroll:true});
 }
 function closeMoneyPrompt(){$('moneyPromptModal').classList.add('hidden');moneyPromptSave=null}
 function saveMoneyPrompt(){let input=$('moneyPromptValue');const raw=input.value,n=raw.trim()?moneyNum(raw):(moneyPromptAllowBlank?0:NaN);if(!Number.isSafeInteger(n)||n<moneyPromptMin){$('moneyPromptError').textContent='金額を確認してね';return}const cb=moneyPromptSave;closeMoneyPrompt();if(cb)cb(n)}
@@ -471,58 +471,41 @@ async function mkBoot(){
 }
 mkBoot();
 
-/* Input visibility: respond to the visual viewport, without changing Enter behavior. */
-(function mkKeepAmountFieldsVisible(){
+/* Keyboard-aware budget sheet: position against the visible viewport, not the
+   document's previous scroll direction. Keep this isolated to the money prompt. */
+(function mkStableBudgetSheet(){
   const vv=window.visualViewport;
   if(!vv)return;
-  let active=null;
-  let pending=0;
-  function adjust(){
-    pending=0;
-    const el=document.activeElement;
-    const isMoney=el instanceof HTMLInputElement &&
-      (el.closest('.money-input') || el.inputMode==='numeric' || el.type==='number');
-    const modal=isMoney && el.closest('.modal:not(.hidden)');
-    document.querySelectorAll('.modal.mk-keyboard-open').forEach(m=>{
-      if(m!==modal){m.classList.remove('mk-keyboard-open');m.style.removeProperty('--mk-keyboard-inset')}
-    });
-    if(!isMoney)return;
-    const covered=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
-    const keyboardVisible=covered>110;
-    if(modal && keyboardVisible){
-      modal.classList.add('mk-keyboard-open');
-      modal.style.setProperty('--mk-keyboard-inset',covered+'px');
-    }else if(modal){
+  let raf=0;
+  function update(){
+    raf=0;
+    const modal=document.getElementById('moneyPromptModal');
+    if(!modal)return;
+    if(modal.classList.contains('hidden')){
       modal.classList.remove('mk-keyboard-open');
       modal.style.removeProperty('--mk-keyboard-inset');
+      return;
     }
-    if(!keyboardVisible)return;
-    requestAnimationFrame(()=>{
-      if(document.activeElement!==el)return;
-      const visibleBottom=vv.offsetTop+vv.height;
-      const r=el.getBoundingClientRect();
-      if(modal){
-        const sheet=el.closest('.sheet');
-        if(sheet){
-          const s=sheet.getBoundingClientRect();
-          const needed=r.bottom+18-Math.min(s.bottom,visibleBottom);
-          if(needed>0)sheet.scrollTop+=needed;
-          if(modal.id==='moneyPromptModal'){
-            const actions=sheet.querySelector('.grid2, .confirm-actions');
-            if(actions){const a=actions.getBoundingClientRect();const extra=a.bottom+12-visibleBottom;if(extra>0)sheet.scrollTop+=extra;}
-          }
-        }
-      }else if(r.bottom>visibleBottom-16 || r.top<vv.offsetTop+12){
-        el.scrollIntoView({block:'center',behavior:'instant'});
-      }
-    });
+    const input=document.getElementById('moneyPromptValue');
+    const keyboardHeight=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);
+    const keyboardOpen=keyboardHeight>110 && document.activeElement===input;
+    modal.classList.toggle('mk-keyboard-open',keyboardOpen);
+    if(!keyboardOpen){modal.style.removeProperty('--mk-keyboard-inset');return;}
+    modal.style.setProperty('--mk-keyboard-inset',keyboardHeight+'px');
+    // Always reset the sheet's own scroll. The entire sheet should sit above
+    // the keyboard, including the Save button, independent of page scroll.
+    const sheet=modal.querySelector('.sheet');
+    if(sheet)sheet.scrollTop=0;
   }
-  function queue(){if(pending)cancelAnimationFrame(pending);pending=requestAnimationFrame(adjust)}
+  function queue(){if(raf)cancelAnimationFrame(raf);raf=requestAnimationFrame(update)}
   document.addEventListener('focusin',e=>{
-    if(e.target instanceof HTMLInputElement){active=e.target;queue();setTimeout(queue,120);setTimeout(queue,350);setTimeout(queue,650)}
+    if(e.target?.id==='moneyPromptValue'){
+      queue();[80,180,350,650,950].forEach(ms=>setTimeout(queue,ms));
+    }
   });
-  document.addEventListener('focusout',()=>{active=null;setTimeout(queue,120)});
+  document.addEventListener('focusout',e=>{if(e.target?.id==='moneyPromptValue')setTimeout(queue,100)});
   vv.addEventListener('resize',queue);
   vv.addEventListener('scroll',queue);
   window.addEventListener('resize',queue);
+  new MutationObserver(queue).observe(document.getElementById('moneyPromptModal'),{attributes:true,attributeFilter:['class']});
 })();

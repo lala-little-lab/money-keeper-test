@@ -313,3 +313,7 @@
 /* Keep an open bottom sheet clear of the Android software keyboard. */
 .modal.mk-keyboard-open{bottom:var(--mk-keyboard-inset,0px)}
 .modal.mk-keyboard-open .sheet{max-height:calc(100% - 12px);overscroll-behavior:contain}
+
+/* Budget modal: anchor its bottom above the keyboard regardless of page scroll. */
+#moneyPromptModal.mk-keyboard-open{bottom:var(--mk-keyboard-inset,0px)}
+#moneyPromptModal.mk-keyboard-open .sheet{max-height:100%;overflow-y:auto}
