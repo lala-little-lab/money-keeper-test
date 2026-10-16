@@ -40,15 +40,17 @@
 
 <div id="budget" class="page"><section class="mk-analysis">
 <div class="card"><div class="row"><button class="ghost" onclick="analysisMonthMove(-1)">‹ 前月</button><strong id="analysisMonthLabel"></strong><button class="ghost" onclick="analysisMonthMove(1)">翌月 ›</button></div></div>
-<div class="card"><div class="mid">今月の収支</div><div class="mk-finance-pair"><div class="mk-finance-tile"><span>収入</span><strong id="analysisIncome"></strong></div><div class="mk-finance-tile pink"><span>支出</span><strong id="monthSpend"></strong></div></div><div class="row mk-net"><span>収支差額</span><strong id="analysisNet"></strong></div></div>
+<div class="card mk-summary-card"><div class="mid">月の収支</div><div class="mk-finance-pair"><div class="mk-finance-tile"><span>収入</span><strong id="analysisIncome"></strong></div><div class="mk-finance-tile pink"><span>支出</span><strong id="monthSpend"></strong></div></div><div class="row mk-net"><span>収支差額</span><strong id="analysisNet"></strong></div></div>
 <div class="card mk-budget-card">
 <div class="mid">月の予算と支出</div>
-<div class="row mk-budget-line"><span>月の予算 <strong id="monthBudgetValue"></strong></span><button class="ghost sm" onclick="editMonthlyBudget()">編集</button></div>
-<div class="row mk-budget-line"><span>支出総額 <strong id="monthSpendBudget"></strong></span><button class="ghost sm" onclick="openAnalysisTrend('expense')">推移 ›</button></div>
-<div class="progress mk-budget-progress"><div id="monthBudgetProgress"></div></div>
-<div class="row"><span>予算残額</span><strong id="monthRemain"></strong></div>
+<div class="mk-finance-pair mk-budget-tiles">
+<div class="mk-finance-tile"><div class="mk-tile-head"><span>月の予算</span><button class="ghost sm" onclick="editMonthlyBudget()">編集</button></div><strong id="monthBudgetValue"></strong></div>
+<div class="mk-finance-tile pink"><div class="mk-tile-head"><span>支出総額</span><button class="ghost sm" onclick="openAnalysisTrend('expense')">推移 ›</button></div><strong id="monthSpendBudget"></strong></div>
 </div>
-<div class="card mk-categories-card"><div class="mid">カテゴリ別の支出実績</div><div id="budgetRows"></div></div>
+<div class="progress mk-budget-progress"><div id="monthBudgetProgress"></div></div>
+<div class="row mk-budget-remain"><span>予算残額</span><strong id="monthRemain"></strong></div>
+</div>
+<div class="card mk-categories-card"><div class="mid">カテゴリ別の予算と支出</div><div id="budgetRows"></div></div>
 
 <div class="card"><div class="row"><div><div class="mid">💗 ほしいもの候補</div><div id="wishShortcut" class="small"></div></div><button class="outline" onclick="openOther('wishlist')">見る</button></div></div>
 </section></div>

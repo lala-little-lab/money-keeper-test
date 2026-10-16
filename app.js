@@ -366,6 +366,8 @@ $('monthRemain').textContent=b===null?'予算未設定':yen(b-tot.expense);
 $('monthRemain').classList.toggle('mk-unset',b===null);
 $('analysisIncome').textContent=yen(tot.income);
 $('analysisNet').textContent=yen(tot.income-tot.expense);
+$('analysisNet').classList.toggle('mk-negative',tot.income-tot.expense<0);
+$('monthRemain').classList.toggle('mk-negative',b!==null&&b-tot.expense<0);
 $('monthBudgetProgress').style.setProperty('width',(b>0?Math.min(100,tot.expense/b*100):0)+'%','important');
 const map={};rows.forEach(t=>{const v=analysisSpend(t);if(v>0){const c=analysisCat(t);map[c]=(map[c]||0)+v}});
 const names=[...new Set([...cats,...Object.keys(categoryBudgets),...Object.keys(categoryBudgetHistory[month]||{}),...Object.keys(map)])];
@@ -377,7 +379,7 @@ $('budgetRows').innerHTML=names.map(c=>{
  const bar=b>0?`<div class="progress mk-category-progress"><div style="width:${Math.min(100,v/b*100)}%"></div></div>`:'';
  const budgetText=b===null||b===undefined?'予算未設定':'予算 '+yen(b);
  const remain=b>0?`<span class="${v>b?'mk-over-budget':''}">${v>b?'超過 '+yen(v-b):'残り '+yen(b-v)}</span>`:'';
- return `<div class="mk-category-row"><div class="row mk-category-top"><strong>${safeHtml(c)}</strong><span class="mk-category-spend"><span class="mk-category-muted">支出</span><strong>${yen(v)}</strong>${trend}</span></div>${bar}<div class="row mk-category-bottom"><span class="mk-category-budget"><span>${budgetText}</span>${edit}</span>${remain}</div>${expanded?`<form class="mk-inline-budget" onsubmit="saveInlineCategoryBudget(event)"><label for="mkInlineBudgetAmount">選択月の予算</label><div class="mk-inline-budget-field"><span>¥</span><input id="mkInlineBudgetAmount" type="number" inputmode="decimal" min="0" step="1" autocomplete="off" value="${b===null||b===undefined?'':b}" placeholder="金額を入力"></div><div class="mk-inline-budget-actions"><button type="button" class="outline" onclick="cancelInlineCategoryBudget()">キャンセル</button><button type="submit" class="primary">決定</button></div><div class="small">0円で未設定に戻します。</div></form>`:''}</div>`;
+ return `<div class="mk-category-row"><div class="row mk-category-top"><strong>${safeHtml(c)}</strong><span class="mk-category-spend"><span class="mk-category-muted">支出</span><strong>${yen(v)}</strong>${trend}</span></div>${bar}<div class="row mk-category-bottom"><span class="mk-category-budget"><span>${budgetText}</span>${edit}</span>${remain}</div>${expanded?`<form class="mk-inline-budget" onsubmit="saveInlineCategoryBudget(event)"><label for="mkInlineBudgetAmount">選択月の予算</label><div class="mk-inline-budget-entry"><div class="mk-inline-budget-field"><span>¥</span><input id="mkInlineBudgetAmount" type="number" inputmode="decimal" min="0" step="1" autocomplete="off" value="${b===null||b===undefined?'':b}" placeholder="金額を入力"></div><button type="submit" class="primary mk-inline-budget-confirm">決定</button></div><div class="small">0円で未設定に戻します。</div></form>`:''}</div>`;
 }).join('')||'<div class="small">カテゴリはまだありません。</div>';
 }
 function editCategoryBudgetDirect(c){

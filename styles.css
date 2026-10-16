@@ -322,3 +322,22 @@
 .mk-inline-budget-field input{min-width:0;width:100%;border:0!important;background:transparent!important;box-shadow:none!important;font-size:18px;padding:4px 0!important;outline:none}
 .mk-inline-budget-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .mk-inline-budget-actions button{min-height:40px}
+
+/* Monthly analysis refresh (2026-10-16): matching compact tiles */
+.mk-analysis .mk-summary-card .mk-finance-tile strong,
+.mk-analysis .mk-budget-card .mk-finance-tile strong{color:#494148;font-size:20px;font-weight:800;line-height:1.3;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.mk-analysis .mk-budget-card{padding:15px 18px 13px}
+.mk-analysis .mk-budget-card .mid{margin-bottom:9px}
+.mk-analysis .mk-budget-tiles .mk-finance-tile{min-width:0;gap:6px}
+.mk-analysis .mk-tile-head{display:flex;align-items:center;justify-content:space-between;gap:3px;min-width:0}
+.mk-analysis .mk-tile-head span{font-size:12px;white-space:nowrap}
+.mk-analysis .mk-tile-head button{flex:none;font-size:10px;padding:5px 6px;min-width:0;line-height:1.2}
+.mk-analysis .mk-budget-card .mk-unset{font-size:12px!important;font-weight:500!important;color:#8a7f84!important}
+.mk-analysis .mk-budget-remain{display:flex;justify-content:flex-end;align-items:baseline;gap:8px;font-size:13px}
+.mk-analysis .mk-budget-remain strong{font-size:16px}
+.mk-analysis .mk-negative{color:#c14354!important}
+.mk-inline-budget-entry{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:stretch;gap:8px}
+.mk-inline-budget-entry .mk-inline-budget-field{min-width:0}
+.mk-inline-budget-confirm{min-height:40px;min-width:68px;padding:8px 13px;border-radius:10px;font-weight:750;white-space:nowrap}
+.mk-inline-budget-field input{caret-color:#70515f}
+@media(max-width:360px){.mk-analysis .mk-finance-tile{padding:10px}.mk-analysis .mk-tile-head span{font-size:11px}.mk-analysis .mk-tile-head button{padding:4px 5px}}
