@@ -2,6 +2,7 @@
 <link rel="stylesheet" href="styles.css"></head><body><div class="app"><header><div class="head"><div><h1>Money Keeper</h1><div class="sub">Step2 保存機能テスト版・実データ入力禁止</div></div></div></header>
 
 <div id="home" class="page active"><section>
+<div class="card mk-todo-card"><div class="row"><div class="mid">やること <span id="todoCount" class="mk-todo-count"></span></div><button class="outline" onclick="mkTodoAdd()">＋ 追加</button></div><div id="mkTodoRows"></div><button class="mk-todo-more" onclick="mkTodoList()">すべて見る ›</button></div>
 <div class="card"><div class="label">手元資金</div><div class="big" id="cashTotal"></div><div class="small">銀行・現金・PayPay・Suica・Starbucks／NISAは別</div><div class="div"></div><div class="row"><span>給与サイクル</span><strong>未設定</strong></div><div class="row"><span class="label">今サイクルの残り確定引落</span><strong>¥0</strong></div><div class="row"><span class="label">次の給料日前残高見込み</span><strong id="prePay"></strong></div></div>
 <div class="card"><div class="row"><div class="mid">残高</div><button class="outline" onclick="adjustBalance()">残高を合わせる</button></div><div id="balanceList"></div><div class="item"><div class="row"><span>NISA（参考）</span><strong>未登録</strong></div><div class="item-meta">手元資金には含めない</div></div></div>
 <div class="card"><div class="row"><div class="mid">15日定点</div><span class="pill">長期比較</span></div><div class="small">毎月15日前後の手元資金を保存。見忘れた月は履歴から再現できる形を目標。</div><button class="outline" style="width:100%;margin-top:8px" onclick="saveSnapshot()">今日の値を定点として保存</button><div id="snapshotList"></div></div>

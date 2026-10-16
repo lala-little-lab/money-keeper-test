@@ -367,3 +367,6 @@
 .loan-card-actions .loan-action-primary{background:#f4dfe9;color:#9b4e72;border:1px solid #e9c6d7;font-weight:750}
 .loan-card-actions .loan-action-primary:hover{background:#edd0df}
 .loan-card-archive,.loan-restore{background:#f1edf3!important;color:#77697e!important;border:1px solid #ded5e2!important}
+
+/* Compact home TODO */
+.mk-todo-card{height:auto!important;min-height:0!important}.mk-todo-count{font-size:12px;color:#8b7b85;font-weight:500}.mk-todo-row{display:flex;align-items:center;border-bottom:1px solid rgba(120,110,120,.12);min-height:41px}.mk-todo-link{flex:1;display:flex;align-items:center;gap:7px;border:0;background:transparent;color:inherit;text-align:left;padding:9px 0;min-width:0;font-size:13px}.mk-todo-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mk-todo-date{font-size:11px;color:#8b7b85;white-space:nowrap}.mk-todo-options{border:0;background:transparent;color:#9b7889;padding:7px 4px;font-size:18px}.mk-todo-more{display:block;width:100%;border:0;background:transparent;color:#9d6784;padding:10px 0 0;font-size:12px}.mk-todo-empty{padding:10px 0}.mk-loan-todo-btn{border:1px solid #e4c4d3;background:#fff6fa;color:#a05b7e;border-radius:7px;padding:5px 7px;font-size:11px;white-space:nowrap}
