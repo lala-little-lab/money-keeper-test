@@ -370,3 +370,21 @@
 
 /* Compact home TODO */
 .mk-todo-card{height:auto!important;min-height:0!important}.mk-todo-count{font-size:12px;color:#8b7b85;font-weight:500}.mk-todo-row{display:flex;align-items:center;border-bottom:1px solid rgba(120,110,120,.12);min-height:41px}.mk-todo-link{flex:1;display:flex;align-items:center;gap:7px;border:0;background:transparent;color:inherit;text-align:left;padding:9px 0;min-width:0;font-size:13px}.mk-todo-title{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.mk-todo-date{font-size:11px;color:#8b7b85;white-space:nowrap}.mk-todo-options{border:0;background:transparent;color:#9b7889;padding:7px 4px;font-size:18px}.mk-todo-more{display:block;width:100%;border:0;background:transparent;color:#9d6784;padding:10px 0 0;font-size:12px}.mk-todo-empty{padding:10px 0}.mk-loan-todo-btn{border:1px solid #e4c4d3;background:#fff6fa;color:#a05b7e;border-radius:7px;padding:5px 7px;font-size:11px;white-space:nowrap}
+
+/* TODO usability update */
+.mk-todo-heading{font-size:19px;font-weight:800;display:flex;align-items:center;gap:7px;white-space:nowrap}
+.mk-todo-heading-icon{font-size:19px;color:#bd7295;font-weight:500}.mk-todo-header{align-items:center}.mk-todo-count{font-size:12px;margin-top:3px}
+.mk-todo-row{min-height:52px;gap:8px}.mk-todo-check{width:19px;height:19px;accent-color:#bc7295;flex:none;margin:0 2px 0 0}
+.mk-todo-link{font-size:15px;padding:12px 0;min-width:0;gap:5px}.mk-todo-title{white-space:normal;line-height:1.4}.mk-todo-date{font-size:11px}
+.mk-todo-important .mk-todo-title{color:#a44d75;font-weight:750}.mk-todo-star{color:#b85d85}.mk-todo-detail{border:1px solid #e8dce2;background:#fff;border-radius:10px;color:#795965;padding:7px 9px;font-size:11px;white-space:nowrap;flex:none}
+.mk-todo-more[hidden],.mk-todo-overlay[hidden],.mk-todo-delete[hidden]{display:none!important}
+.mk-todo-overlay{position:fixed;inset:0;z-index:10000;background:#0006;display:flex;align-items:center;justify-content:center;padding:16px}
+.mk-todo-sheet{width:min(100%,460px);max-height:90vh;overflow:auto;background:#fff;border-radius:22px;padding:22px;box-shadow:0 12px 35px #0002}
+.mk-todo-sheet-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.mk-todo-sheet-head h2{font-size:22px;margin:0}
+.mk-todo-label{display:block;color:#777;margin-bottom:8px}.mk-todo-title-input{width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:14px;padding:13px;font-size:16px}
+.mk-todo-setting-head{display:flex;align-items:center;justify-content:space-between;margin-top:24px;margin-bottom:14px}.mk-todo-emphasis{display:flex;align-items:center;gap:5px;font-size:15px}.mk-todo-emphasis input{accent-color:#bd7295;width:19px;height:19px}
+.mk-todo-date-row{display:flex;align-items:center;gap:12px;flex-wrap:nowrap}.mk-todo-no-date,.mk-todo-date-choice{display:flex;align-items:center;gap:5px;min-width:0;white-space:nowrap;font-size:14px}.mk-todo-date-row input[type=radio]{accent-color:#bd7295;width:18px;height:18px;flex:none}.mk-todo-date-choice{flex:1}.mk-todo-date-choice input[type=date]{min-width:0;width:100%;box-sizing:border-box;border:1px solid #ddd;border-radius:12px;padding:9px 5px;font-size:14px;background:#fff}
+.mk-todo-modal-actions{display:flex;gap:10px;margin-top:24px}.mk-todo-modal-actions .btn{flex:1}.mk-todo-delete{color:#b94242;border-color:#e5bfc7}
+.loan-person-card:not(.is-archived) .loan-summary-row{position:relative;align-items:center}.loan-person-card:not(.is-archived) .loan-summary-head{min-height:76px;padding-right:4px}
+.mk-loan-todo-btn{align-self:center;flex:none;padding:5px 7px;font-size:11px;line-height:1.3;min-height:27px;max-width:70px}
+@media(max-width:380px){.mk-todo-heading{font-size:17px}.mk-todo-date-row{gap:5px}.mk-todo-no-date,.mk-todo-date-choice{font-size:12px}.mk-todo-sheet{padding:17px}.mk-todo-date-choice input[type=date]{font-size:12px}}

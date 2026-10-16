@@ -282,7 +282,7 @@ function renderLoans(){
  if(loanArchiveView){$('loanSummary').innerHTML=archived.length?archived.map(p=>{let es=esAll.filter(x=>x.person===p),state=loanStateText(p,es),open=loanExpandedPerson===p,parts=loanRowsForPerson(p,es,true);return `<div class="loan-person-card is-archived ${open?'':'collapsed'}" data-loan-person="${safeHtml(p)}"><div class="loan-summary-row"><button class="loan-summary-head" type="button" aria-expanded="${open}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')"><span class="loan-summary-left"><span class="loan-summary-name">${safeHtml(p)}</span><span class="loan-current-state">${state}</span></span><span class="loan-summary-arrow">${open?'▲':'▼'}</span></button><button class="loan-restore" type="button" onclick="restoreLoanPerson('${p.replace(/'/g,"\\'")}')">元に戻す</button></div><div class="loan-person-inner"><div class="loan-history-head"><div class="loan-history-title">やりとり履歴（閲覧のみ）</div></div>${parts.rows}${parts.foldControl}${parts.archiveHtml}</div></div>`}).join(''):'<div class="loan-empty">アーカイブ済みの相手はいません。</div>';return}
  if(!activePeople.length){$('loanSummary').innerHTML='<div class="loan-empty">まだ記録はありません。</div>';return}
  let ordered=[...activePeople];if(loanExpandedPerson&&ordered.includes(loanExpandedPerson))ordered=[loanExpandedPerson,...ordered.filter(x=>x!==loanExpandedPerson)];
- $('loanSummary').innerHTML=ordered.map(p=>{let es=esAll.filter(x=>x.person===p),state=loanStateText(p,es),open=loanExpandedPerson===p,parts=loanRowsForPerson(p,es),organizing=loanOrganize&&open;return `<div class="loan-person-card ${open?'':'collapsed'}" data-loan-person="${safeHtml(p)}"><div class="loan-summary-row"><button class="loan-summary-head" type="button" aria-expanded="${open}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')"><span class="loan-summary-left"><span class="loan-summary-name">${safeHtml(p)}</span><span class="loan-current-state">${state}</span></span></button><button class="mk-loan-todo-btn" onclick="mkLoanTodoFromButton(this)">＋TODO</button><div class="loan-summary-side"><button class="loan-card-archive" type="button" onclick="archiveLoanPerson('${p.replace(/'/g,"\\'")}')">アーカイブ</button><button class="loan-card-arrow" type="button" aria-label="カードを${open?'閉じる':'開く'}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')">${open?'▲':'▼'}</button></div></div><div class="loan-person-inner"><div class="loan-history-head"><div class="loan-history-title">やりとり履歴</div><div class="loan-card-actions"><button class="ghost loan-action-primary" onclick="toggleLoanOrganize('${p.replace(/'/g,"\\'")}')">${organizing?'完了':'整理'}</button><button class="ghost loan-action-primary" onclick="openLoanExtraFromButton(this)">追加</button></div></div>${organizing?`<div class="loan-organize-actions"><div class="loan-organize-note">${loanSelectedIds.size?loanSelectedIds.size+'件選択中':'記録を選択できます'}</div><button class="ghost" onclick="makeLoanGroup('${p.replace(/'/g,"\\'")}')" ${loanSelectedIds.size<2?'disabled':''}>グループ化</button><button class="ghost" onclick="settleLoanPerson('${p.replace(/'/g,"\\'")}')">ここまでチャラ</button></div>`:''}${loanAddToGroupId&&loanGroups.find(g=>g.id===loanAddToGroupId)?.person===p?`<div class="loan-group-add-actions"><div class="loan-organize-note">${loanSelectedIds.size?loanSelectedIds.size+'件選択中':'追加する履歴を選択'}</div><button class="ghost" onclick="cancelAddToLoanGroup()">キャンセル</button><button class="ghost" onclick="saveAddToLoanGroup('${loanAddToGroupId}')" ${loanSelectedIds.size<1?'disabled':''}>追加する</button></div>`:''}${parts.rows}${parts.foldControl}${parts.archiveHtml}</div></div>`}).join('');
+ $('loanSummary').innerHTML=ordered.map(p=>{let es=esAll.filter(x=>x.person===p),state=loanStateText(p,es),open=loanExpandedPerson===p,parts=loanRowsForPerson(p,es),organizing=loanOrganize&&open;return `<div class="loan-person-card ${open?'':'collapsed'}" data-loan-person="${safeHtml(p)}"><div class="loan-summary-row"><button class="loan-summary-head" type="button" aria-expanded="${open}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')"><span class="loan-summary-left"><span class="loan-summary-name">${safeHtml(p)}</span><span class="loan-current-state">${state}</span></span></button><button class="mk-loan-todo-btn" type="button" onclick="mkLoanTodoFromButton(this)">＋TODO</button><div class="loan-summary-side"><button class="loan-card-archive" type="button" onclick="archiveLoanPerson('${p.replace(/'/g,"\\'")}')">アーカイブ</button><button class="loan-card-arrow" type="button" aria-label="カードを${open?'閉じる':'開く'}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')">${open?'▲':'▼'}</button></div></div><div class="loan-person-inner"><div class="loan-history-head"><div class="loan-history-title">やりとり履歴</div><div class="loan-card-actions"><button class="ghost loan-action-primary" onclick="toggleLoanOrganize('${p.replace(/'/g,"\\'")}')">${organizing?'完了':'整理'}</button><button class="ghost loan-action-primary" onclick="openLoanExtraFromButton(this)">追加</button></div></div>${organizing?`<div class="loan-organize-actions"><div class="loan-organize-note">${loanSelectedIds.size?loanSelectedIds.size+'件選択中':'記録を選択できます'}</div><button class="ghost" onclick="makeLoanGroup('${p.replace(/'/g,"\\'")}')" ${loanSelectedIds.size<2?'disabled':''}>グループ化</button><button class="ghost" onclick="settleLoanPerson('${p.replace(/'/g,"\\'")}')">ここまでチャラ</button></div>`:''}${loanAddToGroupId&&loanGroups.find(g=>g.id===loanAddToGroupId)?.person===p?`<div class="loan-group-add-actions"><div class="loan-organize-note">${loanSelectedIds.size?loanSelectedIds.size+'件選択中':'追加する履歴を選択'}</div><button class="ghost" onclick="cancelAddToLoanGroup()">キャンセル</button><button class="ghost" onclick="saveAddToLoanGroup('${loanAddToGroupId}')" ${loanSelectedIds.size<1?'disabled':''}>追加する</button></div>`:''}${parts.rows}${parts.foldControl}${parts.archiveHtml}</div></div>`}).join('');
 }
 function finalCardForPayment(p){if(['dcard','dpay','id','paypal'].includes(p))return'dcard';if(['rakuten','epos','lumine'].includes(p))return p;return''}
 const cardDefs={
@@ -462,19 +462,65 @@ function mkTodoItems(){
  }
  return list.sort((a,b)=>(a.due||'9999-99-99').localeCompare(b.due||'9999-99-99')||Number(b.auto)-Number(a.auto));
 }
-function renderTodos(){const el=$('mkTodoRows');if(!el)return;const items=mkTodoItems();$('todoCount').textContent=items.length?'（'+items.length+'件）':'';el.innerHTML=items.length?items.slice(0,5).map(t=>`<div class="mk-todo-row"><button class="mk-todo-link" onclick="mkTodoOpen('${safeHtml(t.key||t.id)}')"><span class="mk-todo-title">${safeHtml(t.title)}</span><span class="mk-todo-date">${t.due?fmtMD(t.due):''}${t.estimated?'・見込み':''}</span><span>›</span></button><button class="mk-todo-options" aria-label="TODOの管理" onclick="mkTodoManage('${safeHtml(t.key||t.id)}')">···</button></div>`).join(''):'<div class="small mk-todo-empty">やることはありません ♡</div>';
+let mkTodoExpanded=false,mkTodoEditingId=null,mkTodoEditingPerson=null;
+function mkTodoEscId(t){return JSON.stringify(t.key||t.id).replace(/"/g,'&quot;')}
+function renderTodos(){
+ const el=$('mkTodoRows');if(!el)return;const items=mkTodoItems();
+ $('todoCount').textContent=items.length+'件';
+ el.innerHTML=(mkTodoExpanded?items:items.slice(0,5)).map(t=>{
+ const id=mkTodoEscId(t),important=t.kind==='fund'||!!t.emphasis;
+ return `<div class="mk-todo-row ${important?'mk-todo-important':''}"><input class="mk-todo-check" type="checkbox" aria-label="${safeHtml(t.title)}を完了" onchange="mkTodoComplete(${id},this.checked)"><button class="mk-todo-link" type="button" onclick="mkTodoEditById(${id})"><span class="mk-todo-title">${important?'<span class="mk-todo-star">✧ </span>':''}${safeHtml(t.title)}</span>${t.due?`<span class="mk-todo-date">${fmtMD(t.due)}</span>`:''}</button>${t.kind!=='manual'?`<button class="mk-todo-detail" type="button" onclick="mkTodoOpen(${id})">詳細 ›</button>`:''}</div>`
+ }).join('')||'<div class="small mk-todo-empty">やることはありません ♡</div>';
+ const more=$('mkTodoMore');more.hidden=items.length<=5;more.textContent=mkTodoExpanded?'閉じる ▲':'もっと見る ▼';
 }
 function mkTodoGet(id){return mkTodoItems().find(x=>(x.key||x.id)===id)}
-function mkTodoOpen(id){const t=mkTodoGet(id);if(!t)return;if(t.kind==='check'){nav('due',document.querySelectorAll('.nav')[3]);openBillDetail(t.card)}else if(t.kind==='fund'){nav('record',document.querySelectorAll('.nav')[1]);const b=document.querySelector('.mode-choice[onclick*="transfer"]');if(b)setMode('transfer',b)}else if(t.kind==='loan'){loanActivePerson=t.person;loanExpandedPerson=t.person;loanArchiveView=false;openOther('loans');renderLoans()}else mkTodoEdit(t)}
-function mkTodoAdd(){const title=prompt('TODOの内容を入力してね');if(!title?.trim())return;const due=prompt('期限（任意）：YYYY-MM-DD／空欄でもOK','')||'';if(due&&!/^\d{4}-\d{2}-\d{2}$/.test(due)){alert('日付は YYYY-MM-DD で入力してね');return}mkTodos.push({id:'todo'+Date.now(),title:title.trim(),due,done:false});renderAll()}
-function mkTodoEdit(t){const title=prompt('TODOの内容',t.title);if(title===null)return;if(!title.trim())return;const due=prompt('期限（任意）',t.due||'');if(due===null)return;if(due&&!/^\d{4}-\d{2}-\d{2}$/.test(due)){alert('日付は YYYY-MM-DD で入力してね');return}const item=mkTodos.find(x=>x.id===t.id);if(item){item.title=title.trim();item.due=due;renderAll()}}
-function mkTodoManage(id){const t=mkTodoGet(id);if(!t)return;
- if(t.auto){if(confirm('この引落分のリマインダーを非表示にする？\n※ 請求や残高の記録には影響しません。')){mkTodoHidden[id]=true;renderAll()}return}
- const action=prompt('TODOの管理：\n1 = 編集\n2 = 完了\n3 = 削除（TODOだけ）','1');
- if(action==='1')mkTodoEdit(t);else if(action==='2'){const x=mkTodos.find(x=>x.id===id);if(x){x.done=true;renderAll()}}else if(action==='3'&&confirm('TODOだけ削除しますか？')){mkTodos=mkTodos.filter(x=>x.id!==id);renderAll()}
+function mkTodoOpen(id){const t=mkTodoGet(id);if(!t)return;if(t.kind==='check'){nav('due',document.querySelectorAll('.nav')[3]);openBillDetail(t.card)}else if(t.kind==='fund'){nav('due',document.querySelectorAll('.nav')[3])}else if(t.kind==='loan'){loanActivePerson=t.person;loanExpandedPerson=t.person;loanArchiveView=false;openOther('loans');renderLoans()}else mkTodoEdit(t)}
+function mkTodoAdd(){mkTodoShow(null,null)}
+function mkTodoEditById(id){const t=mkTodoGet(id);if(t)mkTodoEdit(t)}
+function mkTodoEdit(t){mkTodoShow(t,null)}
+function mkTodoShow(t,person){
+ mkTodoEditingId=t?(t.key||t.id):null;mkTodoEditingPerson=person||null;
+ $('mkTodoModalTitle').textContent=t?'TODOを編集':'TODOを追加';
+ $('mkTodoTitleInput').value=t?t.title:(person?person+'の清算':'');
+ $('mkTodoTitleInput').readOnly=!!person||!!(t&&t.kind!=='manual');
+ $('mkTodoEmphasis').checked=!!(t&&t.emphasis);
+ const due=t?.due||mkToday();$('mkTodoDateInput').value=due;
+ document.querySelector('input[name="mkTodoDueMode"][value="'+(t?.due?'date':'none')+'"]').checked=true;
+ $('mkTodoDelete').hidden=!(t||person);$('mkTodoDelete').textContent=t?.auto?'今回非表示':'削除';
+ $('mkTodoModal').hidden=false;mkTodoValidate();
 }
-function mkTodoList(){const items=mkTodoItems();if(!items.length){alert('現在のTODOはありません');return}const chosen=prompt('TODO一覧（最大20件）\n'+items.slice(0,20).map((t,i)=>(i+1)+'. '+t.title+(t.due?'（'+t.due+'）':'')).join('\n')+'\n\n番号を入力すると該当画面へ移動します。','');if(chosen){const t=items[Number(chosen)-1];if(t)mkTodoOpen(t.key||t.id)}}
-function mkLoanTodoFromButton(btn){const p=btn.closest('.loan-person-card')?.dataset.loanPerson;if(!p)return;const net=txs.filter(x=>x.person===p&&typeGroup(x)==='loan').reduce((s,x)=>s+loanImpact(x),0);if(!net){alert('未清算額がありません');return}const existing=mkTodos.find(t=>t.person===p&&!t.done);if(existing){if(confirm('この相手のTODOをリストから外す？')){mkTodos=mkTodos.filter(t=>t!==existing);renderAll()}return}const due=prompt(p+'の清算TODOの期限（任意）\nYYYY-MM-DD、空欄でもOK','');if(due===null)return;if(due&&!/^\d{4}-\d{2}-\d{2}$/.test(due)){alert('日付は YYYY-MM-DD で入力してね');return}mkTodos.push({id:'todo'+Date.now(),person:p,direction:Math.sign(net),due,done:false});renderAll()}
+function mkTodoClose(){$('mkTodoModal').hidden=true;mkTodoEditingId=null;mkTodoEditingPerson=null}
+function mkTodoValidate(){$('mkTodoSave').disabled=!$('mkTodoTitleInput').value.trim()}
+function mkTodoDateMode(){}
+function mkTodoChooseDate(){document.querySelector('input[name="mkTodoDueMode"][value="date"]').checked=true}
+function mkTodoSave(){
+ const title=$('mkTodoTitleInput').value.trim();if(!title)return;
+ const due=document.querySelector('input[name="mkTodoDueMode"]:checked').value==='date'?$('mkTodoDateInput').value:'';
+ if(document.querySelector('input[name="mkTodoDueMode"]:checked').value==='date'&&!due)return;
+ const emphasis=$('mkTodoEmphasis').checked,t=mkTodoEditingId?mkTodoGet(mkTodoEditingId):null;
+ if(t){if(t.auto){mkTodoClose();return}else{const item=mkTodos.find(x=>x.id===t.id);if(item){if(!item.person)item.title=title;item.due=due;item.emphasis=emphasis}}}
+ else if(mkTodoEditingPerson){const p=mkTodoEditingPerson,net=txs.filter(x=>x.person===p&&typeGroup(x)==='loan').reduce((v,x)=>v+loanImpact(x),0);if(net)mkTodos.push({id:'todo'+Date.now(),person:p,direction:Math.sign(net),due,emphasis,done:false})}
+ else mkTodos.push({id:'todo'+Date.now(),title,due,emphasis,done:false});
+ mkTodoClose();renderAll();
+}
+function mkTodoDelete(){
+ if(!mkTodoEditingId){mkTodoClose();return}
+ const t=mkTodoGet(mkTodoEditingId);if(!t)return;
+ if(t.auto)mkTodoHidden[t.key]=true;else mkTodos=mkTodos.filter(x=>x.id!==t.id);
+ mkTodoClose();renderAll();
+}
+function mkTodoComplete(id,checked){if(!checked)return;const t=mkTodoGet(id);if(!t)return;
+ if(t.auto){if(!confirm('このリマインダーを今回の一覧から外す？\n※請求や入金の処理は完了しません。')){renderTodos();return}mkTodoHidden[id]=true}
+ else{const item=mkTodos.find(x=>x.id===id);if(item)item.done=true}
+ renderAll();
+}
+function mkTodoManage(id){mkTodoEditById(id)}
+function mkTodoList(){mkTodoExpanded=!mkTodoExpanded;renderTodos()}
+function mkLoanTodoFromButton(btn){const p=btn.closest('.loan-person-card')?.dataset.loanPerson;if(!p)return;
+ const net=txs.filter(x=>x.person===p&&typeGroup(x)==='loan').reduce((v,x)=>v+loanImpact(x),0);if(!net)return;
+ const existing=mkTodos.find(t=>t.person===p&&!t.done);if(existing)mkTodoShow({...existing,title:p+(net<0?'に '+yen(-net)+' 返す':'から '+yen(net)+' 返してもらう'),kind:'loan'},null);
+ else mkTodoShow(null,p);
+}
 
 function mkState(){return {
   txs,loans,cashbook,snapshots,wishes,recurring,eventsData,mkTodos,mkTodoHidden,
