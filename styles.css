@@ -341,3 +341,24 @@
 .mk-inline-budget-confirm{min-height:40px;min-width:68px;padding:8px 13px;border-radius:10px;font-weight:750;white-space:nowrap}
 .mk-inline-budget-field input{caret-color:#70515f}
 @media(max-width:360px){.mk-analysis .mk-finance-tile{padding:10px}.mk-analysis .mk-tile-head span{font-size:11px}.mk-analysis .mk-tile-head button{padding:4px 5px}}
+
+/* 2026-10-16: Consistent action-button palette (visual-only update). */
+/* Primary actions: replace the previous charcoal background. */
+.btn{background:#c67596;color:#fff}
+.btn:hover{background:#b96789}
+.btn:active{background:#a9587b}
+/* Inline budget confirmation stays gentle and visually distinct. */
+.mk-inline-budget-confirm{background:#fce8f0;color:#9d315d;border:1px solid #f4d6e2}
+.mk-inline-budget-confirm:hover{background:#f8dbe7}
+/* Controls inside tinted monthly summary tiles need a visible outline. */
+.mk-analysis .mk-budget-tiles .mk-tile-head button{
+  background:#fff;
+  border:1px solid #c98ba4;
+  color:#8f4868;
+  border-radius:9px;
+  font-weight:700;
+}
+.mk-analysis .mk-budget-tiles .mk-tile-head button:focus-visible,
+.btn:focus-visible,.mk-inline-budget-confirm:focus-visible{
+  outline:2px solid #a95477;outline-offset:2px;
+}
