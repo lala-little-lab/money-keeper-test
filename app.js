@@ -282,7 +282,7 @@ function renderLoans(){
  if(loanArchiveView){$('loanSummary').innerHTML=archived.length?archived.map(p=>{let es=esAll.filter(x=>x.person===p),state=loanStateText(p,es),open=loanExpandedPerson===p,parts=loanRowsForPerson(p,es,true);return `<div class="loan-person-card is-archived ${open?'':'collapsed'}" data-loan-person="${safeHtml(p)}"><div class="loan-summary-row"><button class="loan-summary-head" type="button" aria-expanded="${open}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')"><span class="loan-summary-left"><span class="loan-summary-name">${safeHtml(p)}</span><span class="loan-current-state">${state}</span></span><span class="loan-summary-arrow">${open?'▲':'▼'}</span></button><button class="loan-restore" type="button" onclick="restoreLoanPerson('${p.replace(/'/g,"\\'")}')">元に戻す</button></div><div class="loan-person-inner"><div class="loan-history-head"><div class="loan-history-title">やりとり履歴（閲覧のみ）</div></div>${parts.rows}${parts.foldControl}${parts.archiveHtml}</div></div>`}).join(''):'<div class="loan-empty">アーカイブ済みの相手はいません。</div>';return}
  if(!activePeople.length){$('loanSummary').innerHTML='<div class="loan-empty">まだ記録はありません。</div>';return}
  let ordered=[...activePeople];if(loanExpandedPerson&&ordered.includes(loanExpandedPerson))ordered=[loanExpandedPerson,...ordered.filter(x=>x!==loanExpandedPerson)];
- $('loanSummary').innerHTML=ordered.map(p=>{let es=esAll.filter(x=>x.person===p),state=loanStateText(p,es),open=loanExpandedPerson===p,parts=loanRowsForPerson(p,es),organizing=loanOrganize&&open;return `<div class="loan-person-card ${open?'':'collapsed'}" data-loan-person="${safeHtml(p)}"><div class="loan-summary-row"><button class="loan-summary-head" type="button" aria-expanded="${open}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')"><span class="loan-summary-left"><span class="loan-summary-name">${safeHtml(p)}</span><span class="loan-current-state">${state}</span></span></button><button class="mk-loan-todo-btn" type="button" onclick="mkLoanTodoFromButton(this)">＋TODO</button><div class="loan-summary-side"><button class="loan-card-archive" type="button" onclick="archiveLoanPerson('${p.replace(/'/g,"\\'")}')">アーカイブ</button><button class="loan-card-arrow" type="button" aria-label="カードを${open?'閉じる':'開く'}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')">${open?'▲':'▼'}</button></div></div><div class="loan-person-inner"><div class="loan-history-head"><div class="loan-history-title">やりとり履歴</div><div class="loan-card-actions"><button class="ghost loan-action-primary" onclick="toggleLoanOrganize('${p.replace(/'/g,"\\'")}')">${organizing?'完了':'整理'}</button><button class="ghost loan-action-primary" onclick="openLoanExtraFromButton(this)">追加</button></div></div>${organizing?`<div class="loan-organize-actions"><div class="loan-organize-note">${loanSelectedIds.size?loanSelectedIds.size+'件選択中':'記録を選択できます'}</div><button class="ghost" onclick="makeLoanGroup('${p.replace(/'/g,"\\'")}')" ${loanSelectedIds.size<2?'disabled':''}>グループ化</button><button class="ghost" onclick="settleLoanPerson('${p.replace(/'/g,"\\'")}')">ここまでチャラ</button></div>`:''}${loanAddToGroupId&&loanGroups.find(g=>g.id===loanAddToGroupId)?.person===p?`<div class="loan-group-add-actions"><div class="loan-organize-note">${loanSelectedIds.size?loanSelectedIds.size+'件選択中':'追加する履歴を選択'}</div><button class="ghost" onclick="cancelAddToLoanGroup()">キャンセル</button><button class="ghost" onclick="saveAddToLoanGroup('${loanAddToGroupId}')" ${loanSelectedIds.size<1?'disabled':''}>追加する</button></div>`:''}${parts.rows}${parts.foldControl}${parts.archiveHtml}</div></div>`}).join('');
+ $('loanSummary').innerHTML=ordered.map(p=>{let es=esAll.filter(x=>x.person===p),state=loanStateText(p,es),open=loanExpandedPerson===p,parts=loanRowsForPerson(p,es),organizing=loanOrganize&&open;return `<div class="loan-person-card ${open?'':'collapsed'}" data-loan-person="${safeHtml(p)}"><div class="loan-summary-row"><button class="loan-summary-head" type="button" aria-expanded="${open}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')"><span class="loan-summary-left"><span class="loan-summary-name">${safeHtml(p)}</span><span class="loan-current-state">${state}</span></span></button><button class="mk-loan-todo-btn" type="button" onclick="mkLoanTodoFromButton(this)">やること</button><div class="loan-summary-side"><button class="loan-card-archive" type="button" onclick="archiveLoanPerson('${p.replace(/'/g,"\\'")}')">アーカイブ</button><button class="loan-card-arrow" type="button" aria-label="カードを${open?'閉じる':'開く'}" onclick="toggleLoanCard('${p.replace(/'/g,"\\'")}')">${open?'▲':'▼'}</button></div></div><div class="loan-person-inner"><div class="loan-history-head"><div class="loan-history-title">やりとり履歴</div><div class="loan-card-actions"><button class="ghost loan-action-primary" onclick="toggleLoanOrganize('${p.replace(/'/g,"\\'")}')">${organizing?'完了':'整理'}</button><button class="ghost loan-action-primary" onclick="openLoanExtraFromButton(this)">追加</button></div></div>${organizing?`<div class="loan-organize-actions"><div class="loan-organize-note">${loanSelectedIds.size?loanSelectedIds.size+'件選択中':'記録を選択できます'}</div><button class="ghost" onclick="makeLoanGroup('${p.replace(/'/g,"\\'")}')" ${loanSelectedIds.size<2?'disabled':''}>グループ化</button><button class="ghost" onclick="settleLoanPerson('${p.replace(/'/g,"\\'")}')">ここまでチャラ</button></div>`:''}${loanAddToGroupId&&loanGroups.find(g=>g.id===loanAddToGroupId)?.person===p?`<div class="loan-group-add-actions"><div class="loan-organize-note">${loanSelectedIds.size?loanSelectedIds.size+'件選択中':'追加する履歴を選択'}</div><button class="ghost" onclick="cancelAddToLoanGroup()">キャンセル</button><button class="ghost" onclick="saveAddToLoanGroup('${loanAddToGroupId}')" ${loanSelectedIds.size<1?'disabled':''}>追加する</button></div>`:''}${parts.rows}${parts.foldControl}${parts.archiveHtml}</div></div>`}).join('');
 }
 function finalCardForPayment(p){if(['dcard','dpay','id','paypal'].includes(p))return'dcard';if(['rakuten','epos','lumine'].includes(p))return p;return''}
 const cardDefs={
@@ -452,15 +452,15 @@ function mkTodoItems(){
  }
  for(const g of Object.values(grouped)){
   const shortage=Math.max(0,g.amount-balances[g.account].v),key='fund|'+g.account+'|'+g.due;
-  if(shortage>0&&!mkTodoHidden[key])list.push({key,title:balances[g.account].name+'への入金準備',due:g.due,kind:'fund',auto:true,shortage,card:g.cards[0],estimated:g.cards.some(c=>statusForBill(c,g.due)!=='confirmed')});
+  if(shortage>0&&!mkTodoHidden[key])list.push({key,title:balances[g.account].name+'へ '+yen(shortage)+' 入金',due:g.due,kind:'fund',auto:true,shortage,card:g.cards[0],estimated:g.cards.some(c=>statusForBill(c,g.due)!=='confirmed')});
  }
  for(const t of mkTodos){
-  if(t.done)continue;
+  if(t.done||t.hidden)continue;
   if(t.person){const net=txs.filter(x=>x.person===t.person&&typeGroup(x)==='loan').reduce((s,x)=>s+loanImpact(x),0);if(!net||Math.sign(net)!==t.direction)continue;
    list.push({...t,title:t.person+(net<0?'に '+yen(-net)+' 返す':'から '+yen(net)+' 返してもらう'),kind:'loan'});
   }else list.push({...t,kind:'manual'});
  }
- return list.sort((a,b)=>(a.due||'9999-99-99').localeCompare(b.due||'9999-99-99')||Number(b.auto)-Number(a.auto));
+ return list.sort((a,b)=>(a.due||'9999-99-99').localeCompare(b.due||'9999-99-99')||Number(b.kind==='fund'||b.emphasis)-Number(a.kind==='fund'||a.emphasis)||Number(b.auto)-Number(a.auto));
 }
 let mkTodoExpanded=false,mkTodoEditingId=null,mkTodoEditingPerson=null;
 function mkTodoEscId(t){return JSON.stringify(t.key||t.id).replace(/"/g,'&quot;')}
@@ -469,9 +469,9 @@ function renderTodos(){
  $('todoCount').textContent=items.length+'件';
  el.innerHTML=(mkTodoExpanded?items:items.slice(0,5)).map(t=>{
  const id=mkTodoEscId(t),important=t.kind==='fund'||!!t.emphasis;
- return `<div class="mk-todo-row ${important?'mk-todo-important':''}"><input class="mk-todo-check" type="checkbox" aria-label="${safeHtml(t.title)}を完了" onchange="mkTodoComplete(${id},this.checked)"><button class="mk-todo-link" type="button" onclick="mkTodoEditById(${id})"><span class="mk-todo-title">${important?'<span class="mk-todo-star">✧ </span>':''}${safeHtml(t.title)}</span>${t.due?`<span class="mk-todo-date">${fmtMD(t.due)}</span>`:''}</button>${t.kind!=='manual'?`<button class="mk-todo-detail" type="button" onclick="mkTodoOpen(${id})">詳細 ›</button>`:''}</div>`
+ return `<div class="mk-todo-row ${important?'mk-todo-important':''}"><input class="mk-todo-check" type="checkbox" aria-label="${safeHtml(t.title)}を完了" ${t.auto?'disabled title="詳細画面で操作すると自動完了します"':''} onchange="mkTodoComplete(${id},this.checked)"><button class="mk-todo-link" type="button" onclick="mkTodoEditById(${id})"><span class="mk-todo-title">${safeHtml(t.title)}</span>${t.due?`<span class="mk-todo-date">${fmtMD(t.due)}</span>`:''}</button>${t.kind!=='manual'?`<button class="mk-todo-detail" type="button" onclick="mkTodoOpen(${id})">詳細 ›</button>`:''}</div>`
  }).join('')||'<div class="small mk-todo-empty">やることはありません ♡</div>';
- const more=$('mkTodoMore');more.hidden=items.length<=5;more.textContent=mkTodoExpanded?'閉じる ▲':'もっと見る ▼';
+ const more=$('mkTodoMore');more.hidden=items.length<=5;more.textContent=mkTodoExpanded?'閉じる ▲':'もっと見る ▼';mkTodoSections();
 }
 function mkTodoGet(id){return mkTodoItems().find(x=>(x.key||x.id)===id)}
 function mkTodoOpen(id){const t=mkTodoGet(id);if(!t)return;if(t.kind==='check'){nav('due',document.querySelectorAll('.nav')[3]);openBillDetail(t.card)}else if(t.kind==='fund'){nav('due',document.querySelectorAll('.nav')[3])}else if(t.kind==='loan'){loanActivePerson=t.person;loanExpandedPerson=t.person;loanArchiveView=false;openOther('loans');renderLoans()}else mkTodoEdit(t)}
@@ -480,13 +480,13 @@ function mkTodoEditById(id){const t=mkTodoGet(id);if(t)mkTodoEdit(t)}
 function mkTodoEdit(t){mkTodoShow(t,null)}
 function mkTodoShow(t,person){
  mkTodoEditingId=t?(t.key||t.id):null;mkTodoEditingPerson=person||null;
- $('mkTodoModalTitle').textContent=t?'TODOを編集':'TODOを追加';
+ $('mkTodoModalTitle').textContent=t?'やることを編集':'やることを追加';
  $('mkTodoTitleInput').value=t?t.title:(person?person+'の清算':'');
  $('mkTodoTitleInput').readOnly=!!person||!!(t&&t.kind!=='manual');
  $('mkTodoEmphasis').checked=!!(t&&t.emphasis);
  const due=t?.due||mkToday();$('mkTodoDateInput').value=due;
  document.querySelector('input[name="mkTodoDueMode"][value="'+(t?.due?'date':'none')+'"]').checked=true;
- $('mkTodoDelete').hidden=!(t||person);$('mkTodoDelete').textContent=t?.auto?'今回非表示':'削除';
+ $('mkTodoDelete').hidden=!(t||person)||!!t?.auto; $('mkTodoHide').hidden=!(t||person); $('mkTodoHide').textContent=t?.auto?'表示しない':'表示しない';
  $('mkTodoModal').hidden=false;mkTodoValidate();
 }
 function mkTodoClose(){$('mkTodoModal').hidden=true;mkTodoEditingId=null;mkTodoEditingPerson=null}
@@ -504,13 +504,36 @@ function mkTodoSave(){
  mkTodoClose();renderAll();
 }
 function mkTodoDelete(){
- if(!mkTodoEditingId){mkTodoClose();return}
- const t=mkTodoGet(mkTodoEditingId);if(!t)return;
- if(t.auto)mkTodoHidden[t.key]=true;else mkTodos=mkTodos.filter(x=>x.id!==t.id);
+ if(!mkTodoEditingId)return;
+ const t=mkTodoGet(mkTodoEditingId);if(!t||t.auto)return;
+ if(!confirm('このやることを削除しますか？'))return;
+ mkTodos=mkTodos.filter(x=>x.id!==t.id);
  mkTodoClose();renderAll();
 }
+function mkTodoHide(){
+ const t=mkTodoEditingId?mkTodoGet(mkTodoEditingId):null;if(!t)return;
+ if(!confirm('このやることを表示しないようにしますか？\nあとから再表示できます。'))return;
+ if(t.auto)mkTodoHidden[t.key]=true;
+ else {const item=mkTodos.find(x=>x.id===t.id);if(item)item.hidden=true}
+ mkTodoClose();renderAll();
+}
+function mkTodoRestore(id){
+ if(id.startsWith('auto:'))delete mkTodoHidden[id.slice(5)];
+ else {const t=mkTodos.find(x=>x.id===id);if(t){t.hidden=false;t.done=false}}
+ renderAll();
+}
+function mkTodoUndo(id){const t=mkTodos.find(x=>x.id===id);if(!t)return;t.done=false;renderAll()}
+let mkTodoCompletedOpen=false,mkTodoHiddenOpen=false;
+function mkTodoToggleSection(which){if(which==='done')mkTodoCompletedOpen=!mkTodoCompletedOpen;else mkTodoHiddenOpen=!mkTodoHiddenOpen;renderTodos()}
+function mkTodoSections(){
+ const done=mkTodos.filter(t=>t.done),hidden=mkTodos.filter(t=>t.hidden&&!t.done);
+ const autoHidden=Object.keys(mkTodoHidden).filter(k=>mkTodoHidden[k]);
+ const completed=$('mkTodoCompleted'),concealed=$('mkTodoConcealed');
+ if(completed){completed.innerHTML=done.length?`<button class="mk-todo-section-toggle" onclick="mkTodoToggleSection('done')">完了済み ${done.length}件 ${mkTodoCompletedOpen?'▲':'▼'}</button>${mkTodoCompletedOpen?done.map(t=>`<div class="mk-todo-archive-row"><label><input type="checkbox" checked onchange="mkTodoUndo(${JSON.stringify(t.id).replace(/"/g,'&quot;')})"> <s>${safeHtml(t.title||t.person+'の清算')}</s></label></div>`).join(''):''}`:''}
+ if(concealed){const n=hidden.length+autoHidden.length;concealed.innerHTML=n?`<button class="mk-todo-section-toggle" onclick="mkTodoToggleSection('hidden')">非表示の項目 ${n}件 ${mkTodoHiddenOpen?'▲':'▼'}</button>${mkTodoHiddenOpen?[...hidden.map(t=>({id:t.id,title:t.title||t.person+'の清算'})),...autoHidden.map(k=>({id:'auto:'+k,title:'自動リマインダー（'+k.split('|').slice(1).join(' / ')+'）'}))].map(t=>`<div class="mk-todo-archive-row"><span>${safeHtml(t.title)}</span><button class="outline" onclick="mkTodoRestore(${JSON.stringify(t.id).replace(/"/g,'&quot;')})">再表示</button></div>`).join(''):''}`:''}
+}
 function mkTodoComplete(id,checked){if(!checked)return;const t=mkTodoGet(id);if(!t)return;
- if(t.auto){if(!confirm('このリマインダーを今回の一覧から外す？\n※請求や入金の処理は完了しません。')){renderTodos();return}mkTodoHidden[id]=true}
+ if(t.auto){renderTodos();return}
  else{const item=mkTodos.find(x=>x.id===id);if(item)item.done=true}
  renderAll();
 }
