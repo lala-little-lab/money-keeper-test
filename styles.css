@@ -362,3 +362,8 @@
 .btn:focus-visible,.mk-inline-budget-confirm:focus-visible{
   outline:2px solid #a95477;outline-offset:2px;
 }
+
+/* Loan actions: separate add/organize from edit/delete and archive. */
+.loan-card-actions .loan-action-primary{background:#f4dfe9;color:#9b4e72;border:1px solid #e9c6d7;font-weight:750}
+.loan-card-actions .loan-action-primary:hover{background:#edd0df}
+.loan-card-archive,.loan-restore{background:#f1edf3!important;color:#77697e!important;border:1px solid #ded5e2!important}
