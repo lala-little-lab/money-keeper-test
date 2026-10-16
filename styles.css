@@ -391,3 +391,17 @@
 
 /* TODO final test refinements */
 .mk-todo-heading{gap:8px}.mk-todo-count{margin-top:0;font-size:12px;color:#8b7b85;font-weight:500}.mk-todo-check:disabled{opacity:.35;cursor:not-allowed}.mk-todo-section-toggle{display:block;width:100%;padding:11px 0 6px;background:transparent;border:0;text-align:left;color:#806c78;font-size:12px;font-weight:700}.mk-todo-archive-row{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;font-size:12px;color:#80757b}.mk-todo-archive-row label{display:flex;align-items:center;gap:8px}.mk-todo-archive-row input{width:18px;height:18px;accent-color:#b86b86}.mk-todo-archive-row .outline{font-size:11px;padding:5px 9px}.mk-todo-modal-actions{flex-wrap:wrap}.mk-todo-modal-actions #mkTodoSave{flex-basis:100%;order:-1;background:#b86b86}.mk-todo-modal-actions #mkTodoHide,.mk-todo-modal-actions #mkTodoDelete{flex:1}.mk-todo-modal-actions #mkTodoHide[hidden]{display:none!important}
+
+/* 2026-10-17: confirmed compact actions, no other form layout changes */
+.mk-todo-modal-actions #mkTodoDelete{flex:2 1 0;min-width:0}
+.mk-todo-modal-actions #mkTodoHide{flex:3 1 0;min-width:0;white-space:nowrap;padding-left:3px;padding-right:3px}
+.mk-todo-modal-actions #mkTodoSave{flex:5 1 0;min-width:0}
+.mk-todo-modal-actions{gap:6px}
+.loan-person-card:not(.is-archived) .loan-summary-row{display:flex;align-items:center}
+.mk-loan-summary-actions{display:flex;align-items:center;gap:5px;flex:none;margin-left:auto}
+.mk-loan-summary-actions .mk-loan-todo-btn,.mk-loan-summary-actions .loan-card-archive{box-sizing:border-box;height:29px;min-height:29px;max-width:none;align-self:center;display:inline-flex;align-items:center;justify-content:center;line-height:1.1;font-size:10px;padding:5px 7px;border-radius:9px;white-space:nowrap}
+.mk-loan-summary-actions .mk-loan-todo-btn{background:#fbedf2;color:#a45272;border:1px solid #e7b9c9}
+.mk-loan-summary-actions .mk-loan-todo-btn.mk-loan-todo-active{background:#f1f0f4;color:#77717d;border:1px solid #ded9e1}
+.mk-loan-summary-actions .loan-card-archive{background:#fff!important;color:#77717d!important;border:1px solid #ddd7dc!important}
+.loan-person-card:not(.is-archived) .loan-summary-side{padding-left:2px;padding-right:9px;gap:0}
+@media(max-width:380px){.mk-loan-summary-actions{gap:3px}.mk-loan-summary-actions .mk-loan-todo-btn,.mk-loan-summary-actions .loan-card-archive{font-size:9px;padding:5px}}
