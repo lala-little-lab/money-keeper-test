@@ -12,3 +12,10 @@ This is a **local test build**, not production-ready. Do not enter real personal
 
 Budget modal viewport test: lock background scrolling while keeping backdrop tap to dismiss; size modal to visual viewport above keyboard.
 Test deployment retry 2026-10-16
+
+## 2026-10-17 楽天Pay＋ボタン配置 テスト版
+- やること編集の最下段を「削除 / 表示しない / 決定」2:3:5 の横一列に修正。
+- 支出で楽天Payを選ぶと「楽天カード / 楽天キャッシュ残高」の支払元を選択可能。
+- 楽天カード払いはカード請求、楽天キャッシュ払いは保有残高に反映。編集・削除時の残高戻しにも対応。
+- 楽天キャッシュ残高は「残高を合わせる」でテスト設定。チャージ専用画面の対応は未実装。
+- 手数料の新仕様は今回対象外。架空データのみで試してください。

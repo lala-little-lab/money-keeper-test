@@ -405,3 +405,11 @@
 .mk-loan-summary-actions .loan-card-archive{background:#fff!important;color:#77717d!important;border:1px solid #ddd7dc!important}
 .loan-person-card:not(.is-archived) .loan-summary-side{padding-left:2px;padding-right:9px;gap:0}
 @media(max-width:380px){.mk-loan-summary-actions{gap:3px}.mk-loan-summary-actions .mk-loan-todo-btn,.mk-loan-summary-actions .loan-card-archive{font-size:9px;padding:5px}}
+
+/* 2026-10-17: final single-row TODO actions; overrides previous full-width save */
+.mk-todo-modal-actions{display:flex!important;flex-wrap:nowrap!important;gap:6px;align-items:stretch}
+.mk-todo-modal-actions #mkTodoDelete{order:0!important;flex:2 1 0!important;font-size:12px!important;padding:10px 2px;min-width:0}
+.mk-todo-modal-actions #mkTodoHide{order:1!important;flex:3 1 0!important;font-size:12px!important;padding:10px 2px;min-width:0;white-space:nowrap}
+.mk-todo-modal-actions #mkTodoSave{order:2!important;flex:5 1 0!important;flex-basis:0!important;width:auto!important;min-width:0;font-size:15px!important}
+.mk-rakpay-source{margin-top:9px;padding:10px;border:1px solid #eadfe3;border-radius:12px;background:#fff9fb}
+.mk-rakpay-source .small{margin-bottom:6px}.mk-rakpay-source .mini{flex:1;min-width:0}
