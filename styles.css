@@ -415,3 +415,16 @@
 .mk-rakpay-source .small{margin-bottom:6px}.mk-rakpay-source .mini{flex:1;min-width:0}
 
 .mk-category-link{border:0;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:3px 2px;text-decoration:underline;text-decoration-color:rgba(120,120,120,.35);text-underline-offset:3px}
+
+/* Compact record editor: presentation only; preserve existing form field IDs. */
+#editBody .mk-edit-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:end;margin-bottom:10px}
+#editBody .mk-edit-pair .field{min-width:0;margin:0}
+#editBody .mk-edit-pair input,#editBody .mk-edit-pair select{min-width:0;width:100%;box-sizing:border-box;text-overflow:ellipsis}
+#editBody .mk-edit-details{border:1px solid #eadfe4;border-radius:15px;background:#fcf3f6;padding:12px;margin:10px 0}
+#editBody .mk-edit-details summary{font-weight:750;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
+#editBody .mk-edit-details summary::after{content:'⌄';font-size:22px;line-height:1}
+#editBody .mk-edit-details[open] summary::after{content:'⌃'}
+#editBody .mk-edit-detail-hint{font-size:12px;color:#857a80;margin:5px 0 9px;overflow-wrap:anywhere}
+#editBody .mk-edit-details .mk-edit-pair{margin-top:8px}
+#editBody .mk-edit-details .field{margin:8px 0 0}
+@media(max-width:370px){#editBody .mk-edit-pair{gap:7px}}
