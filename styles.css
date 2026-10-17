@@ -413,3 +413,5 @@
 .mk-todo-modal-actions #mkTodoSave{order:2!important;flex:5 1 0!important;flex-basis:0!important;width:auto!important;min-width:0;font-size:15px!important}
 .mk-rakpay-source{margin-top:9px;padding:10px;border:1px solid #eadfe3;border-radius:12px;background:#fff9fb}
 .mk-rakpay-source .small{margin-bottom:6px}.mk-rakpay-source .mini{flex:1;min-width:0}
+
+.mk-category-link{border:0;background:transparent;color:inherit;font:inherit;font-weight:700;cursor:pointer;padding:3px 2px;text-decoration:underline;text-decoration-color:rgba(120,120,120,.35);text-underline-offset:3px}
