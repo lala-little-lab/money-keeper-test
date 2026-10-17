@@ -49,7 +49,46 @@ let loanGroups=[],loanGroupSerial=0;
 let mkTodos=[],mkTodoHidden={};
 let txs=[],loans=[],cashbook=[],snapshots=[],wishes=[],billAdjustments={},billItemAdjustments={},deletedEventNames=[],mode='expense',loanKind='lend',loanSection='advance',category='',payment='',eventTag='',discount=0,installments=1,from='',to='',chargeTarget='',chargeSource='',histTab='spend',histType='all',histCat='',histPay='',histEvent='',histPeriod='',histStart='',histEnd='',histKeyword='',editingId='',openEventId='',newEventCat='',newEventCatBudgets={},recType='normal',recCategory='',recurringEditIndex=-1,monthlyBudget=190000,transferFeeSide='from',chargeDefaults={paypay:'seibu',suica:'lumine',starbucks:'dcard',rakutencash:'rakbank'},categoryBudgets={},monthlyBudgetHistory={},categoryBudgetHistory={},analysisMonth=new Date().toLocaleDateString('sv-SE').slice(0,7);
 const $=id=>document.getElementById(id),yen=n=>'¥'+Math.round(Number(n)||0).toLocaleString('ja-JP');$('date').value=new Date().toISOString().slice(0,10);
-function nav(id,b){try{sessionStorage.setItem('mk-last-page',id)}catch(_){}document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('.nav').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active');scrollTo(0,0)}function openOther(id){nav(id,document.querySelectorAll('.nav')[5])}function backOther(){nav('other',document.querySelectorAll('.nav')[5])}function openLoansFromOther(){loanExpandedPerson='';loanActivePerson='';loanArchiveView=false;loanOrganize=false;loanAddToGroupId='';loanSelectedIds.clear();openOther('loans');renderLoans()}
+// Browser history integration: a navigation is one history entry, not a reload.
+let mkRestoringNavigation=false;
+function mkNavigationButton(id){
+ const main=['home','record','history','due','budget','other'];
+ const index=main.includes(id)?main.indexOf(id):5;
+ return document.querySelectorAll('.bottom .nav')[index]||null;
+}
+function mkDisplayPage(id,b){
+ if(!$(id)||!$(id).classList.contains('page'))return;
+ try{sessionStorage.setItem('mk-last-page',id)}catch(_){}
+ document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+ $(id).classList.add('active');
+ document.querySelectorAll('.bottom .nav').forEach(x=>x.classList.remove('active'));
+ const button=b||mkNavigationButton(id);if(button)button.classList.add('active');
+ if($('mkBackAnalysis'))$('mkBackAnalysis').classList.add('hidden');
+ scrollTo(0,0);
+}
+function nav(id,b){
+ if(!$(id)||!$(id).classList.contains('page'))return;
+ const current=document.querySelector('.page.active')?.id;
+ if(!mkRestoringNavigation&&current!==id){
+  try{history.pushState({mkPage:id},'',location.href)}catch(_){}
+ }
+ mkDisplayPage(id,b);
+}
+window.addEventListener('popstate',function(event){
+ const id=event.state&&event.state.mkPage;
+ if(!id||!$(id)||!$(id).classList.contains('page'))return;
+ // Do not silently discard a modal's draft on Back. Close it explicitly.
+ const modalOpen=[...document.querySelectorAll('.modal')].some(el=>!el.classList.contains('hidden'));
+ const todo=$('mkTodoModal');
+ const trend=$('mkTrendOverlay');
+ if(modalOpen||(todo&&!todo.hidden)||(trend&&!trend.classList.contains('hidden'))){
+  try{history.forward()}catch(_){}
+  return;
+ }
+ mkRestoringNavigation=true;
+ try{mkDisplayPage(id,mkNavigationButton(id))}finally{mkRestoringNavigation=false}
+});
+function openOther(id){nav(id,document.querySelectorAll('.nav')[5])}function backOther(){nav('other',document.querySelectorAll('.nav')[5])}function openLoansFromOther(){loanExpandedPerson='';loanActivePerson='';loanArchiveView=false;loanOrganize=false;loanAddToGroupId='';loanSelectedIds.clear();openOther('loans');renderLoans()}
 function total(){return Object.values(balances).reduce((s,x)=>s+x.v,0)}function renderBalances(){$('cashTotal').textContent=yen(total());$('prePay').textContent=yen(total());$('balanceList').innerHTML=Object.values(balances).map(x=>`<div class="row item"><span>${x.name}</span><strong>${yen(x.v)}</strong></div>`).join('')}
 function openPicker(title,items,cb){$('pickerTitle').textContent=title;$('pickerList').innerHTML='';items.forEach(it=>{let b=document.createElement('button');b.className='pickitem';b.textContent=it.label;b.onclick=()=>{closePicker();cb(it.value,it.label)};$('pickerList').appendChild(b)});$('pickerModal').classList.remove('hidden')}function closePicker(){$('pickerModal').classList.add('hidden')}
 function adjustBalance(){openPicker('残高を合わせる口座',Object.entries(balances).map(([k,v])=>({label:v.name,value:k})),(k,l)=>{openMoneyPrompt(l+' の実際の残高',balances[k].v,(n)=>{let d=n-balances[k].v;balances[k].v=n;cashbook.unshift({date:$('date').value,text:'残高調整：'+l,delta:d});renderAll()},{min:-999999999})})}
@@ -402,10 +441,9 @@ function mkOpenCategoryHistory(c){
  if($('histEventBtn'))$('histEventBtn').textContent='特別費：すべて';
  if($('histCustomDates'))$('histCustomDates').classList.remove('hidden');
  histMoreOpen=true;setHistory('spend');
- if($('mkBackAnalysis'))$('mkBackAnalysis').classList.remove('hidden');
  nav('history',document.querySelectorAll('.nav')[2]);
 }
-function mkReturnToAnalysis(){if($('mkBackAnalysis'))$('mkBackAnalysis').classList.add('hidden');nav('analysis',document.querySelectorAll('.nav')[3]);}
+function mkReturnToAnalysis(){if($('mkBackAnalysis'))$('mkBackAnalysis').classList.add('hidden');nav('budget',document.querySelectorAll('.nav')[4]);}
 function editCategoryBudgetDirect(c){
  mkInlineBudgetCategory=mkInlineBudgetCategory===c?null:c;
  renderBudget();
@@ -678,3 +716,6 @@ mkBoot();
  modal.addEventListener('touchmove',e=>{if(e.target===modal)e.preventDefault()},{passive:false});
  queue();
 })();
+
+// Give the current app screen a browser-history identity after initialization.
+setTimeout(()=>{try{const active=document.querySelector('.page.active')?.id||'home';if(!history.state?.mkPage)history.replaceState({mkPage:active},'',location.href)}catch(_){}},0);
