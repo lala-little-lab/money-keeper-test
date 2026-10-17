@@ -130,7 +130,17 @@ function txAmount(t){return t.type==='lend'?Number(t.gross||0):Number(t.amount||
 function reverseTxEffect(t){let a=Number(t.amount||0);if(t.type==='expense'&&acct(t.payment==='rakutenpay'?t.rakutenPaySource:t.payment))balances[t.payment==='rakutenpay'?t.rakutenPaySource:t.payment].v+=Number(t.paid??a)+Number(t.fee||0);else if(t.type==='income'&&acct(t.payment))balances[t.payment].v-=a;else if(t.type==='transfer'){let fee=Number(t.fee||0),side=t.feeSide||'from';if(side==='to'){if(balances[t.from])balances[t.from].v+=a;if(balances[t.to])balances[t.to].v-=a-fee}else{if(balances[t.from])balances[t.from].v+=a+fee;if(balances[t.to])balances[t.to].v-=a}}else if(t.type==='charge'){if(balances[t.target])balances[t.target].v-=a;if(acct(t.source))balances[t.source].v+=a}else if(t.type==='lend'&&acct(t.payment))balances[t.payment].v+=Number(t.paid??t.gross??0);else if(t.type==='repay'&&acct(t.payment))balances[t.payment].v+=a+Number(t.fee||0);else if(t.type==='receive'&&acct(t.payment))balances[t.payment].v-=a-Number(t.fee||0);else if(t.type==='loanBorrow'&&acct(t.payment))balances[t.payment].v-=a;else if(t.type==='loanLend'&&acct(t.payment))balances[t.payment].v+=a;cashbook=cashbook.filter(x=>x.refId!==t.id)}
 function applyTxEffect(t){let a=Number(t.amount||0);if(t.type==='expense'&&acct(t.payment==='rakutenpay'?t.rakutenPaySource:t.payment))move(t.date,t.category+(t.memo?'・'+t.memo:''),-(Number(t.paid??a)+Number(t.fee||0)),t.payment==='rakutenpay'?t.rakutenPaySource:t.payment,t.id);else if(t.type==='income'&&acct(t.payment))move(t.date,'入金'+(t.memo?'・'+t.memo:''),a,t.payment,t.id);else if(t.type==='transfer'){let fee=Number(t.fee||0),side=t.feeSide||'from';if(side==='to'){if(balances[t.from])balances[t.from].v-=a;if(balances[t.to])balances[t.to].v+=a-fee}else{if(balances[t.from])balances[t.from].v-=a+fee;if(balances[t.to])balances[t.to].v+=a}if(fee>0)cashbook.unshift({date:t.date,text:'振込手数料',delta:-fee,refId:t.id})}else if(t.type==='charge'){if(balances[t.target])balances[t.target].v+=a;if(acct(t.source))balances[t.source].v-=a;else cashbook.unshift({date:t.date,text:(pays.find(x=>x[0]===t.source)||['',t.source])[1]+'→'+(balances[t.target]?.name||t.target)+'チャージ',delta:a,refId:t.id})}else if(t.type==='lend'&&acct(t.payment))move(t.date,t.category+'（'+t.person+'分を立替）',-Number(t.gross||0),t.payment,t.id);else if(t.type==='repay'&&acct(t.payment))move(t.date,t.person+'へ返済',-(a+Number(t.fee||0)),t.payment,t.id);else if(t.type==='receive'&&acct(t.payment))move(t.date,t.person+'から返済',a-Number(t.fee||0),t.payment,t.id);else if(t.type==='loanBorrow'&&acct(t.payment))move(t.date,t.person+'から借入',a,t.payment,t.id);else if(t.type==='loanLend'&&acct(t.payment))move(t.date,t.person+'へ貸付',-a,t.payment,t.id)}
 function deleteHistoryRecord(id){let t=txs.find(x=>x.id===id);if(!t)return;let group=loanGroupForTx(id);if(group?.adjustmentId){alert('清算済みグループの記録は、グループ解除で清算調整を取り消してから削除してね');return;}let label=typeGroup(t)==='loan'?'この貸し借り記録':'この記録';if(!confirm(isLoanExtra(t)?'この記録外の貸し借りを削除しますか？\n貸し借り残高だけ再計算します。':label+'を削除しますか？\n\n関連する残高・カード請求予定・貸し借り残高も連動して戻します。'))return;reverseTxEffect(t);txs=txs.filter(x=>x.id!==id);renderAll()}
-function toggleHistMore(){histMoreOpen=!histMoreOpen;if($('histFilterExtra'))$('histFilterExtra').classList.toggle('hidden',!histMoreOpen);if($('histMoreBtn'))$('histMoreBtn').textContent=histMoreOpen?'閉じる':'もっと';renderHistFilterStatus()}function renderHistFilterStatus(){let n=[histPeriod,histCat,histPay,histEvent].filter(Boolean).length;let el=$('histFilterStatus');if(!el)return;el.textContent=n?'絞り込み中 '+n+'件':'';el.classList.toggle('hidden',!n||histMoreOpen)}
+function toggleHistMore(){histMoreOpen=!histMoreOpen;if($('histFilterExtra'))$('histFilterExtra').classList.toggle('hidden',!histMoreOpen);if($('histMoreBtn'))$('histMoreBtn').textContent=histMoreOpen?'閉じる':'もっと';renderHistFilterStatus()}function renderHistFilterStatus(){let n=[histPeriod,histCat,histPay,histEvent].filter(Boolean).length;let reset=$('mkHistReset');if(reset){let active=!!((histKeyword||'').trim()||histType!=='all'||histStart||histEnd||n);reset.disabled=!active;reset.classList.toggle('is-inactive',!active)}let el=$('histFilterStatus');if(!el)return;el.textContent=n?'絞り込み中 '+n+'件':'';el.classList.toggle('hidden',!n||histMoreOpen)}
+function resetHistoryFilters(){
+ histKeyword='';histType='all';histPeriod='';histCat='';histPay='';histEvent='';histStart='';histEnd='';
+ if($('histKeyword'))$('histKeyword').value='';
+ if($('histStart'))$('histStart').value='';
+ if($('histEnd'))$('histEnd').value='';
+ if($('histCustomDates'))$('histCustomDates').classList.add('hidden');
+ [['histPeriodBtn','期間'],['histCatBtn','カテゴリ'],['histPayBtn','支払方法'],['histEventBtn','特別費']].forEach(([id,label])=>{if($(id))$(id).textContent=label+'：すべて'});
+ document.querySelectorAll('#histTypeBtns .mini').forEach(b=>b.classList.toggle('active',b.textContent.trim()==='すべて'));
+ renderHistory();
+}
 function setHistory(t){histTab=t;$('histSpendBtn').classList.toggle('active',t==='spend');$('histCashBtn').classList.toggle('active',t==='cash');$('historyFilters').classList.toggle('hidden',t!=='spend');$('spendHistory').classList.toggle('hidden',t!=='spend');$('cashHistory').classList.toggle('hidden',t!=='cash');if($('histFilterExtra'))$('histFilterExtra').classList.toggle('hidden',!histMoreOpen);renderHistFilterStatus();renderHistory()}
 function setHistType(t,b){histType=t;document.querySelectorAll('#histTypeBtns .mini').forEach(x=>x.classList.remove('active'));b.classList.add('active');renderHistory()}
 function histEventNames(){return [...new Set([...eventsData.map(e=>e.name),...deletedEventNames,...txs.map(t=>t.eventTag).filter(Boolean)])].sort((a,b)=>a.localeCompare(b,'ja'))}
@@ -398,7 +408,7 @@ function checkBillAmount(card,due){let el=$('actual-'+card+'-'+due),n=moneyNum(e
 function confirmBillAmount(card,due){let el=$('actual-'+card+'-'+due);if(!el.value)return checkBillAmount(card,due);let n=moneyNum(el.value);billAdjustments[card+'|'+due]={amount:n,status:'confirmed'};delete mkTodoHidden['check|'+card+'|'+due];renderAll();openBillDetail(card)}
 function openBillDetail(card){let c=cardDefs[card],[a,b]=visibleBills(card);$('billTitle').textContent=c.name+' 請求内訳';$('billDetail').innerHTML=[a,b].map((due,i)=>{let st=statusForBill(card,due),amt=amountForBill(card,due),pred=predictedAmount(card,due),late=st==='confirmed'&&pred!==amt;return `<div class="billbox"><div class="billhead"><div><strong>${fmtMD(due)} 引落し${i===0?'':'予定'}</strong><div class="item-meta">記録＋定期支払いから集計</div></div><div><div style="text-align:right;font-weight:800">${yen(amt)}</div><span class="billstatus ${st}">${statusText(st)}</span></div></div>${late?`<div class="warnbox">確定済み総額は ${yen(amt)} のままです。現在の内訳合計は ${yen(pred)}。後から追加した記録や未調整の請求額がないか確認できます。</div>`:''}<div class="subhead">記録一覧</div>${renderBillItems(card,due)}${st!=='planned'||i===0?reconcileBox(card,due):''}</div>`}).join('');$('billModal').classList.remove('hidden')}
 function closeBillDetail(){$('billModal').classList.add('hidden')}
-function cardRow(card){let c=cardDefs[card],[a,b]=visibleBills(card),sa=statusForBill(card,a),sb=statusForBill(card,b);return `<div class="item"><div class="item-title">${c.name}</div><div class="item-meta">締め日：${card==='rakuten'?'月末':c.closeDay+'日'} ／ 引落日：翌月${c.dueDay}日<br>引落口座：${c.account}</div><div class="row"><span>次回引落</span><strong>${fmtMD(a)} ${yen(amountForBill(card,a))}（${statusText(sa)}）</strong></div><div class="row"><span class="small">その次</span><span class="small">${fmtMD(b)} ${yen(amountForBill(card,b))}（${statusText(sb)}）</span></div><button class="outline" style="margin-top:7px" onclick="openBillDetail('${card}')">請求額を確認</button></div>`}
+function cardRow(card){let c=cardDefs[card],[a,b]=visibleBills(card),sa=statusForBill(card,a),sb=statusForBill(card,b);return `<div class="item"><div class="mk-card-heading"><div class="item-title">${c.name}</div><button type="button" class="mk-bill-check" onclick="openBillDetail('${card}')">請求額を確認 ›</button></div><div class="item-meta">締め日：${card==='rakuten'?'月末':c.closeDay+'日'} ／ 引落日：翌月${c.dueDay}日<br>引落口座：${c.account}</div><div class="row"><span>次回引落</span><strong>${fmtMD(a)} ${yen(amountForBill(card,a))}（${statusText(sa)}）</strong></div><div class="row"><span class="small">その次</span><span class="small">${fmtMD(b)} ${yen(amountForBill(card,b))}（${statusText(sb)}）</span></div></div>`}
 function renderDue(){
  $('prep').innerHTML='<div class="small">初期データは未登録です。引落口座の準備情報は今後の本番化で設定します。</div>';
  $('cards').innerHTML=['dcard','rakuten','epos','lumine'].map(cardRow).join('');
@@ -760,3 +770,26 @@ mkBoot();
 
 // Give the current app screen a browser-history identity after initialization.
 setTimeout(()=>{try{const active=document.querySelector('.page.active')?.id||'home';if(!history.state?.mkPage)history.replaceState({mkPage:active},'',location.href)}catch(_){}},0);
+
+
+/* Compact month selector when the analysis selector reaches the viewport top. */
+(function(){
+ let scheduled=false;
+ function update(){
+  scheduled=false;
+  const bar=$('mkMonthSticky'),page=$('budget');
+  if(!bar||!page||!page.classList.contains('active')){if(bar)bar.classList.remove('mk-month-compact');return}
+  // offsetTop is relative to the document flow; use a sentinel before the sticky bar.
+  const sentinel=$('mkMonthSentinel');
+  if(!sentinel)return;
+  bar.classList.toggle('mk-month-compact',sentinel.getBoundingClientRect().top<=0);
+ }
+ function request(){if(scheduled)return;scheduled=true;requestAnimationFrame(update)}
+ window.addEventListener('scroll',request,{passive:true});window.addEventListener('resize',request,{passive:true});
+ document.addEventListener('DOMContentLoaded',()=>{
+  const bar=$('mkMonthSticky');if(bar&&!$('mkMonthSentinel')){
+   const sentinel=document.createElement('div');sentinel.id='mkMonthSentinel';sentinel.setAttribute('aria-hidden','true');bar.parentNode.insertBefore(sentinel,bar);
+  }
+  request();
+ });
+})();

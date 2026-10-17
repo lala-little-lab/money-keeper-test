@@ -422,8 +422,8 @@
 #editBody .mk-edit-pair input,#editBody .mk-edit-pair select{min-width:0;width:100%;box-sizing:border-box;text-overflow:ellipsis}
 #editBody .mk-edit-details{border:1px solid #eadfe4;border-radius:15px;background:#fcf3f6;padding:12px;margin:10px 0}
 #editBody .mk-edit-details summary{font-weight:750;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center}
-#editBody .mk-edit-details summary::after{content:'⌄';font-size:22px;line-height:1}
-#editBody .mk-edit-details[open] summary::after{content:'⌃'}
+#editBody .mk-edit-details summary::after{content:'＋';font-size:21px;line-height:1;font-weight:500}
+#editBody .mk-edit-details[open] summary::after{content:'－'}
 #editBody .mk-edit-detail-hint{font-size:12px;color:#857a80;margin:5px 0 9px;overflow-wrap:anywhere}
 #editBody .mk-edit-details .mk-edit-pair{margin-top:8px}
 #editBody .mk-edit-details .field{margin:8px 0 0}
@@ -435,3 +435,19 @@
 #editModal .sheet-title{min-width:0;white-space:nowrap;font-size:clamp(17px,4.5vw,21px)}
 #editBody .mk-edit-pair .field{min-width:0}
 #editBody .mk-edit-pair input,#editBody .mk-edit-pair select{max-width:100%;text-overflow:ellipsis}
+
+/* Next test build: history reset, compact sticky month and bill action */
+#histTypeBtns{align-items:center}
+.mk-hist-reset{margin-left:auto;padding:7px 9px;border:1px solid #d5a2b7;border-radius:11px;background:#fff8fb;color:#a65e7d;font-size:11px;font-weight:750;white-space:nowrap}
+.mk-hist-reset.is-inactive{opacity:.42;cursor:default}
+#mkMonthSentinel{height:0;pointer-events:none}
+#budget .mk-month-sticky{position:sticky;top:0;z-index:24;background:rgba(255,253,253,.98);box-shadow:0 2px 6px rgba(60,30,45,.03);transition:padding .16s ease,border-radius .16s ease}
+#budget .mk-month-sticky.mk-month-compact{padding:7px 12px;border-radius:0 0 13px 13px;box-shadow:0 4px 12px rgba(60,30,45,.10)}
+.mk-month-short{display:none}
+#budget .mk-month-compact .mk-month-full{display:none}
+#budget .mk-month-compact .mk-month-short{display:inline}
+#budget .mk-month-compact .mk-month-controls button{padding:4px 17px;min-width:45px}
+#budget .mk-month-compact #analysisMonthLabel{font-size:14px}
+.mk-card-heading{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mk-card-heading .item-title{min-width:0}
+.mk-bill-check{flex:none;padding:6px 8px;background:#fbeef3;border-radius:10px;color:#a75d7b;font-size:11px;font-weight:750;white-space:nowrap}
