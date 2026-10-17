@@ -209,6 +209,12 @@ function compactEditLayout(t){
  }
  for(const [id,el] of fields){if(!used.has(id)){el.remove();root.appendChild(el);used.add(id)}}
 }
+function deleteEditingRecord(){
+ const id=editingId;if(!id)return;
+ // Reuse the same deletion confirmation and balance recalculation as History.
+ deleteHistoryRecord(id);
+ if(!txs.some(t=>t.id===id))closeEditRecord();
+}
 function closeEditRecord(){editingId='';$('editModal').classList.add('hidden')}
 function saveEditedRecord(){let t=txs.find(x=>x.id===editingId);if(!t)return;
  if(isLoanExtra(t)){
@@ -772,24 +778,3 @@ mkBoot();
 setTimeout(()=>{try{const active=document.querySelector('.page.active')?.id||'home';if(!history.state?.mkPage)history.replaceState({mkPage:active},'',location.href)}catch(_){}},0);
 
 
-/* Compact month selector when the analysis selector reaches the viewport top. */
-(function(){
- let scheduled=false;
- function update(){
-  scheduled=false;
-  const bar=$('mkMonthSticky'),page=$('budget');
-  if(!bar||!page||!page.classList.contains('active')){if(bar)bar.classList.remove('mk-month-compact');return}
-  // offsetTop is relative to the document flow; use a sentinel before the sticky bar.
-  const sentinel=$('mkMonthSentinel');
-  if(!sentinel)return;
-  bar.classList.toggle('mk-month-compact',sentinel.getBoundingClientRect().top<=0);
- }
- function request(){if(scheduled)return;scheduled=true;requestAnimationFrame(update)}
- window.addEventListener('scroll',request,{passive:true});window.addEventListener('resize',request,{passive:true});
- document.addEventListener('DOMContentLoaded',()=>{
-  const bar=$('mkMonthSticky');if(bar&&!$('mkMonthSentinel')){
-   const sentinel=document.createElement('div');sentinel.id='mkMonthSentinel';sentinel.setAttribute('aria-hidden','true');bar.parentNode.insertBefore(sentinel,bar);
-  }
-  request();
- });
-})();
