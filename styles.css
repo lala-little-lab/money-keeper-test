@@ -428,3 +428,10 @@
 #editBody .mk-edit-details .mk-edit-pair{margin-top:8px}
 #editBody .mk-edit-details .field{margin:8px 0 0}
 @media(max-width:370px){#editBody .mk-edit-pair{gap:7px}}
+
+/* Compact edit modal: record type uses the existing muted pink palette. */
+.mk-edit-kind{color:#bc718e;font-size:.78em;font-weight:750;white-space:nowrap}
+#editModal .sheet .row{gap:8px}
+#editModal .sheet-title{min-width:0;white-space:nowrap;font-size:clamp(17px,4.5vw,21px)}
+#editBody .mk-edit-pair .field{min-width:0}
+#editBody .mk-edit-pair input,#editBody .mk-edit-pair select{max-width:100%;text-overflow:ellipsis}
