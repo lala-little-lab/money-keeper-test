@@ -546,12 +546,54 @@ function resetEventForm(){$('eventForm').dataset.editId='';$('eventFormTitle').t
 function archiveEvent(id){let e=eventsData.find(x=>x.id===id);e.archived=!e.archived;if(e.archived&&openEventId===id)openEventId='';renderAll()}
 function deleteEvent(id){let e=eventsData.find(x=>x.id===id);if(!e||!e.archived)return;let linked=txs.filter(t=>t.eventTag===e.name).length;if(!confirm('「'+e.name+'」を削除しますか？\n\nイベントの予算・期間などの設定は消えます。'+(linked?'\n紐づく支出記録 '+linked+'件は削除せず、特別費名を記録側に残します。':'')+'\n必要なら同じ名前でイベントを作り直して復活できます。'))return;deletedEventNames.push(e.name);eventsData=eventsData.filter(x=>x.id!==id);recurring.forEach(r=>{if(r.event===e.name)r.event=''});if(openEventId===id)openEventId='';renderAll()}
 let editingWishIndex=-1;
-function toggleWishForm(){if(editingWishIndex>=0)cancelWishEdit();else $('wishForm').classList.toggle('hidden')}
-function cancelWishEdit(){$('wishForm').classList.add('hidden');editingWishIndex=-1;$('wishName').value='';$('wishPrice').value='';$('wishMemo').value='';$('wishSaveButton').textContent='リストに追加';$('wishCancelButton').classList.add('hidden')}
-function addWish(){const n=$('wishName').value.trim(),p=moneyNum($('wishPrice').value),memo=$('wishMemo').value.trim();if(!n||p<=0){alert('名前と価格を入力してね');return}const wish={name:n,price:p,memo};if(editingWishIndex>=0&&editingWishIndex<wishes.length){wishes[editingWishIndex]=wish}else{wishes.unshift(wish)}cancelWishEdit();renderAll()}
-function editWish(i){const w=wishes[i];if(!w)return;$('wishForm').classList.remove('hidden');editingWishIndex=i;$('wishName').value=w.name||'';$('wishPrice').value=String(w.price||'');formatMoneyElement($('wishPrice'));$('wishMemo').value=w.memo||'';$('wishSaveButton').textContent='更新する';$('wishCancelButton').classList.remove('hidden');$('wishName').focus();$('wishName').scrollIntoView({block:'center',behavior:'smooth'})}
-function deleteWish(i){if(!wishes[i]||!confirm('このほしいものを削除しますか？'))return;wishes.splice(i,1);if(editingWishIndex===i)cancelWishEdit();else if(editingWishIndex>i)editingWishIndex--;renderAll()}
-function renderWish(){if(!$('wishShortcut')||!$('wishList'))return;$('wishShortcut').textContent='リストに'+wishes.length+'件登録中';$('wishList').innerHTML=wishes.length?wishes.map((w,i)=>`<div class="item mk-wish-item"><div class="row"><div class="mk-wish-info"><div class="item-title">${safeHtml(w.name||'')}</div>${w.memo?`<div class="item-meta mk-wish-memo">${safeHtml(w.memo)}</div>`:''}</div><strong>${yen(Number(w.price)||0)}</strong></div><div class="mk-wish-actions"><button class="ghost sm" onclick="editWish(${i})">編集</button><button class="ghost sm danger" onclick="deleteWish(${i})">削除</button></div></div>`).join(''):'<div class="small" style="margin-top:10px">まだ登録されていません。</div>'}
+function openWishModal(){
+ $('wishModal').classList.remove('hidden');
+ initMoneyInputs();
+ refreshMoneyInputs();
+}
+function toggleWishForm(){
+ editingWishIndex=-1;
+ $('wishName').value='';$('wishPrice').value='';$('wishMemo').value='';
+ $('wishFormTitle').textContent='ほしいものを追加';
+ $('wishSaveButton').textContent='リストに追加';
+ $('wishDeleteButton').classList.add('hidden');
+ openWishModal();
+}
+function cancelWishEdit(){
+ $('wishModal').classList.add('hidden');
+ editingWishIndex=-1;
+ $('wishName').value='';$('wishPrice').value='';$('wishMemo').value='';
+}
+function addWish(){
+ const n=$('wishName').value.trim(),p=moneyNum($('wishPrice').value),memo=$('wishMemo').value.trim();
+ if(!n||p<=0){alert('名前と価格を入力してね');return}
+ const wish={name:n,price:p,memo};
+ if(editingWishIndex>=0&&editingWishIndex<wishes.length)wishes[editingWishIndex]=wish;
+ else wishes.unshift(wish);
+ cancelWishEdit();renderAll();
+}
+function editWish(i){
+ const w=wishes[i];if(!w)return;
+ editingWishIndex=i;
+ $('wishName').value=w.name||'';
+ $('wishPrice').value=String(w.price||'');
+ $('wishMemo').value=w.memo||'';
+ $('wishFormTitle').textContent='ほしいものを編集';
+ $('wishSaveButton').textContent='保存';
+ $('wishDeleteButton').classList.remove('hidden');
+ openWishModal();
+ formatMoneyElement($('wishPrice'));
+}
+function deleteEditingWish(){if(editingWishIndex>=0)deleteWish(editingWishIndex)}
+function deleteWish(i){
+ if(!wishes[i]||!confirm('このほしいものを削除しますか？'))return;
+ wishes.splice(i,1);cancelWishEdit();renderAll();
+}
+function renderWish(){
+ if(!$('wishShortcut')||!$('wishList'))return;
+ $('wishShortcut').textContent='リストに'+wishes.length+'件登録中';
+ $('wishList').innerHTML=wishes.length?wishes.map((w,i)=>`<button type="button" class="mk-wish-row" onclick="editWish(${i})" aria-label="${safeHtml(w.name||'')}を編集"><span class="mk-wish-info"><span class="mk-wish-name">${safeHtml(w.name||'')}</span>${w.memo?`<span class="mk-wish-memo">${safeHtml(w.memo)}</span>`:''}</span><span class="mk-wish-price">${yen(Number(w.price)||0)}</span><span class="mk-wish-chevron" aria-hidden="true">›</span></button>`).join(''):'<div class="small mk-wish-empty">まだ登録されていません。「＋追加」から登録できます。</div>';
+}
 
 function renderRecent(){
  let items=txs.filter(t=>!isLoanExtra(t)&&t.type!=='loanAdjustment');

@@ -494,3 +494,24 @@ textarea{resize:none!important}
 .field input,.field select,.field textarea{box-sizing:border-box;max-width:100%;border-radius:13px}
 .field input:not([type=checkbox]),.field select{min-height:46px}
 .mk-money-input input{min-height:42px!important}
+
+
+/* Wishlist final: single card and shared add/edit popup. */
+.mk-wish-card .mk-wish-header{margin-bottom:6px;gap:12px}
+.mk-wish-card .mk-wish-header .mid{font-size:19px}
+.mk-wish-row{display:flex;width:100%;align-items:center;gap:10px;padding:17px 1px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--ink);font:inherit;text-align:left;cursor:pointer}
+.mk-wish-row:last-child{border-bottom:0}
+.mk-wish-row:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:9px}
+.mk-wish-row .mk-wish-info{display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.mk-wish-name{font-size:15px;font-weight:750;overflow-wrap:anywhere}
+.mk-wish-row .mk-wish-memo{font-size:12px;color:var(--muted);font-weight:400;white-space:pre-wrap;overflow-wrap:anywhere}
+.mk-wish-price{font-size:15px;font-weight:700;white-space:nowrap}
+.mk-wish-chevron{font-size:24px;line-height:1;color:#ad9ba4;margin-left:2px}
+.mk-wish-empty{padding:15px 0 5px}
+.mk-wish-sheet{max-height:calc(100dvh - 45px);overflow-y:auto}
+.mk-wish-modal-head{gap:8px;margin-bottom:12px}
+.mk-wish-modal-head .sheet-title{min-width:0;font-size:20px}
+.mk-wish-delete{flex:none;color:#b14f69!important;border-color:#edc5d0!important;background:#fff7f9!important;padding:8px 13px;font-size:12px}
+.mk-wish-form-actions{margin-top:16px}
+.mk-wish-form-actions button{min-width:0}
+#wishModal textarea{resize:none}
