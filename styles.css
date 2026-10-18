@@ -515,3 +515,5 @@ textarea{resize:none!important}
 .mk-wish-form-actions{margin-top:16px}
 .mk-wish-form-actions button{min-width:0}
 #wishModal textarea{resize:none}
+
+.mk-bill-nav{display:flex;justify-content:space-between;gap:8px;margin:12px 0}.mk-recurring-sheet{max-height:88dvh;overscroll-behavior:contain}.mk-recurring-actions{display:flex;gap:6px;margin-top:12px}.mk-recurring-actions>*{flex:1;min-width:0}.mk-recurring-actions .btn{width:auto}
