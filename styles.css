@@ -471,3 +471,11 @@
 .rec-actions .ghost.sm {font-weight:400!important;}
 /* Pausing a recurring payment is a cautionary action, not deletion. */
 .rec-actions .mk-recurring-pause {color:#a65b67!important;}
+
+/* 2026-10-18: recent edit matches the compact history controls. */
+.mk-recent-edit{min-height:0;min-width:0;padding:6px 8px;font-size:11px}
+/* A quiet, optional reference total below the category list. */
+.mk-category-budget-sum{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--line);margin-top:10px;padding-top:12px;color:var(--muted);font-size:12px}
+.mk-category-budget-sum strong{font-size:13px;color:var(--ink);font-weight:600;white-space:nowrap}
+/* Wishlist: compact actions, notes, and no overall price total. */
+.mk-wish-info{flex:1;min-width:0;overflow-wrap:anywhere}.mk-wish-item .row{align-items:flex-start}.mk-wish-item strong{white-space:nowrap}.mk-wish-memo{white-space:pre-wrap}.mk-wish-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:7px}.mk-wish-actions .ghost{font-weight:400!important}
