@@ -542,7 +542,10 @@ function resetEventForm(){$('eventForm').dataset.editId='';$('eventFormTitle').t
 function archiveEvent(id){let e=eventsData.find(x=>x.id===id);e.archived=!e.archived;if(e.archived&&openEventId===id)openEventId='';renderAll()}
 function deleteEvent(id){let e=eventsData.find(x=>x.id===id);if(!e||!e.archived)return;let linked=txs.filter(t=>t.eventTag===e.name).length;if(!confirm('「'+e.name+'」を削除しますか？\n\nイベントの予算・期間などの設定は消えます。'+(linked?'\n紐づく支出記録 '+linked+'件は削除せず、特別費名を記録側に残します。':'')+'\n必要なら同じ名前でイベントを作り直して復活できます。'))return;deletedEventNames.push(e.name);eventsData=eventsData.filter(x=>x.id!==id);recurring.forEach(r=>{if(r.event===e.name)r.event=''});if(openEventId===id)openEventId='';renderAll()}
 function addWish(){let n=$('wishName').value.trim(),p=moneyNum($('wishPrice').value),pt=Number($('wishPoints').value||0);if(!n||p<=0)return;wishes.unshift({name:n,price:p,points:pt});$('wishName').value='';$('wishPrice').value='';$('wishPoints').value='';renderWish()}function renderWish(){let t=wishes.reduce((s,w)=>s+Math.max(0,w.price-w.points),0);$('wishTotal').textContent=yen(t);$('wishShortcut').textContent='保留中 '+wishes.length+'件／実負担候補 '+yen(t);$('wishList').innerHTML=wishes.length?wishes.map(w=>`<div class="item"><div class="row"><div><div class="item-title">${w.name}</div><div class="item-meta">予定ポイント ${w.points.toLocaleString()}pt・実負担目安 ${yen(Math.max(0,w.price-w.points))}</div></div><strong>${yen(w.price)}</strong></div></div>`).join(''):'<div class="small">保留中のものはありません。</div>'}
-function renderRecent(){let items=txs.filter(t=>!isLoanExtra(t)&&t.type!=='loanAdjustment');$('recent').innerHTML=items.length?items.slice(0,6).map(t=>`<div class="item"><div class="row"><div><div class="item-title">${recordTitle(t)}</div><div class="item-meta">${t.date}${recordMeta(t)?'・'+recordMeta(t):''}</div></div><strong>${yen(txAmount(t))}</strong></div><div style="margin-top:5px"><button class="ghost sm" onclick="editRecord('${t.id}')">編集</button></div></div>`).join(''):'<div class="small">まだ記録はありません。</div>'}
+function renderRecent(){
+ let items=txs.filter(t=>!isLoanExtra(t)&&t.type!=='loanAdjustment');
+ $('recent').innerHTML=items.length?items.slice(0,6).map(t=>`<div class="item mk-recent-item"><div class="mk-recent-heading"><div class="item-title">${safeHtml(recordTitle(t))}</div><strong>${yen(txAmount(t))}</strong></div><div class="mk-recent-detail"><button class="ghost sm mk-recent-edit" onclick="editRecord('${t.id}')">編集</button><div class="item-meta">${safeHtml(t.date)}${recordMeta(t)?'・'+safeHtml(recordMeta(t)):''}</div></div></div>`).join(''):'<div class="small">まだ記録はありません。</div>';
+}
 function renderAll(){renderTodos();renderBalances();renderRecent();renderHistory();renderLoans();renderPersonCandidates();renderDue();renderRecurring();renderBudget();renderEvents();renderWish();initMoneyInputs();refreshMoneyInputs();mkQueueSave()}
 
 // Only persisted business data; temporary form/navigation state stays ephemeral.
@@ -640,6 +643,13 @@ function mkTodoRestore(id){
  else {const t=mkTodos.find(x=>x.id===id);if(t){t.hidden=false;t.done=false}}
  renderAll();
 }
+function mkTodoDeleteCompleted(id){
+ const item=mkTodos.find(t=>t.id===id&&t.done);
+ if(!item)return;
+ if(!confirm('この完了済みのやることを削除しますか？\n貸し借りなどの記録は削除されません。'))return;
+ mkTodos=mkTodos.filter(t=>t.id!==id);
+ renderAll();
+}
 function mkTodoUndo(id){const t=mkTodos.find(x=>x.id===id);if(!t)return;t.done=false;renderAll()}
 let mkTodoCompletedOpen=false,mkTodoHiddenOpen=false;
 function mkTodoToggleSection(which){if(which==='done')mkTodoCompletedOpen=!mkTodoCompletedOpen;else mkTodoHiddenOpen=!mkTodoHiddenOpen;renderTodos()}
@@ -647,7 +657,7 @@ function mkTodoSections(){
  const done=mkTodos.filter(t=>t.done),hidden=mkTodos.filter(t=>t.hidden&&!t.done);
  const autoHidden=Object.keys(mkTodoHidden).filter(k=>mkTodoHidden[k]);
  const completed=$('mkTodoCompleted'),concealed=$('mkTodoConcealed');
- if(completed){completed.innerHTML=done.length?`<button class="mk-todo-section-toggle" onclick="mkTodoToggleSection('done')">完了済み ${done.length}件 ${mkTodoCompletedOpen?'▲':'▼'}</button>${mkTodoCompletedOpen?done.map(t=>`<div class="mk-todo-archive-row"><label><input type="checkbox" checked onchange="mkTodoUndo(${JSON.stringify(t.id).replace(/"/g,'&quot;')})"> <s>${safeHtml(t.title||t.person+'の清算')}</s></label></div>`).join(''):''}`:''}
+ if(completed){completed.innerHTML=done.length?`<button class="mk-todo-section-toggle" onclick="mkTodoToggleSection('done')">完了済み ${done.length}件 ${mkTodoCompletedOpen?'▲':'▼'}</button>${mkTodoCompletedOpen?done.map(t=>`<div class="mk-todo-archive-row"><label><input type="checkbox" checked onchange="mkTodoUndo(${JSON.stringify(t.id).replace(/"/g,'&quot;')})"> <s>${safeHtml(t.title||t.person+'の清算')}</s></label><button type="button" class="outline mk-todo-completed-delete" onclick="mkTodoDeleteCompleted(${JSON.stringify(t.id).replace(/"/g,'&quot;')})">削除</button></div>`).join(''):''}`:''}
  if(concealed){const n=hidden.length+autoHidden.length;concealed.innerHTML=n?`<button class="mk-todo-section-toggle" onclick="mkTodoToggleSection('hidden')">非表示の項目 ${n}件 ${mkTodoHiddenOpen?'▲':'▼'}</button>${mkTodoHiddenOpen?[...hidden.map(t=>({id:t.id,title:t.title||t.person+'の清算'})),...autoHidden.map(k=>({id:'auto:'+k,title:'自動リマインダー（'+k.split('|').slice(1).join(' / ')+'）'}))].map(t=>`<div class="mk-todo-archive-row"><span>${safeHtml(t.title)}</span><button class="outline" onclick="mkTodoRestore(${JSON.stringify(t.id).replace(/"/g,'&quot;')})">再表示</button></div>`).join(''):''}`:''}
 }
 function mkTodoComplete(id,checked){if(!checked)return;const t=mkTodoGet(id);if(!t)return;

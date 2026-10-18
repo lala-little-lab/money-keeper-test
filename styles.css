@@ -449,3 +449,14 @@
 
 /* Edit screen: delete action in header, cancel and save at bottom. */
 #editModal .mk-edit-delete{flex:none;background:#fff8f8;border:1px solid #e9c3ca;color:#b44d66;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;min-height:38px}
+
+/* Recent records: float the action beside details rather than adding a separate row. */
+.mk-recent-heading{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.mk-recent-heading .item-title{min-width:0;overflow-wrap:anywhere}
+.mk-recent-heading strong{flex:none;white-space:nowrap}
+.mk-recent-detail{display:flow-root;margin-top:4px;min-height:36px}
+.mk-recent-detail .item-meta{margin-top:0;overflow-wrap:anywhere}
+.mk-recent-edit{float:right;margin:0 0 2px 9px;min-height:32px;min-width:48px}
+/* Completed todo actions remain in one row, including long titles. */
+.mk-todo-archive-row label{flex:1;min-width:0;overflow-wrap:anywhere}
+.mk-todo-completed-delete{flex:none;background:#fff!important;border:1px solid #e7dfe3!important;color:#7b7074!important;font-weight:650}
