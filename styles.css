@@ -460,3 +460,14 @@
 /* Completed todo actions remain in one row, including long titles. */
 .mk-todo-archive-row label{flex:1;min-width:0;overflow-wrap:anywhere}
 .mk-todo-completed-delete{flex:none;background:#fff!important;border:1px solid #e7dfe3!important;color:#7b7074!important;font-weight:650}
+
+/* 2026-10-18: lighten only small secondary action labels; preserve their geometry and palette. */
+.mk-recent-edit,
+.history-actions .ghost,
+.loan-record-actions .ghost,
+.mk-todo-completed-delete,
+.mk-analysis .mk-budget-tiles .mk-tile-head button,
+.mk-analysis .mk-category-action,
+.rec-actions .ghost.sm {font-weight:400!important;}
+/* Pausing a recurring payment is a cautionary action, not deletion. */
+.rec-actions .mk-recurring-pause {color:#a65b67!important;}
