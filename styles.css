@@ -479,3 +479,18 @@
 .mk-category-budget-sum strong{font-size:13px;color:var(--ink);font-weight:600;white-space:nowrap}
 /* Wishlist: compact actions, notes, and no overall price total. */
 .mk-wish-info{flex:1;min-width:0;overflow-wrap:anywhere}.mk-wish-item .row{align-items:flex-start}.mk-wish-item strong{white-space:nowrap}.mk-wish-memo{white-space:pre-wrap}.mk-wish-actions{display:flex;justify-content:flex-end;gap:6px;margin-top:7px}.mk-wish-actions .ghost{font-weight:400!important}
+
+/* 2026-10-18 follow-up: keep wishlist inputs consistent with the app palette. */
+#wishlist input:focus,#wishlist textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 2px rgba(184,107,134,.13)}
+#wishlist .money-input.mk-money-input:focus-within{border-color:var(--accent);box-shadow:0 0 0 2px rgba(184,107,134,.13)}
+#wishlist .money-input.mk-money-input input:focus{outline:none!important;box-shadow:none!important}
+/* Match the history action button, including its exact box sizing. */
+#recent .mk-recent-edit{padding:6px 8px!important;font-size:11px!important;min-height:0!important;min-width:0!important;line-height:normal!important;border-radius:10px!important;font-weight:400!important}
+
+/* Unified focus treatment: only active editable fields */
+input:focus,textarea:focus,select:focus,.money-input:focus-within{outline:none!important;border-color:#c77c9b!important;box-shadow:0 0 0 3px rgba(199,124,155,.17)!important}
+.money-input:focus-within input{box-shadow:none!important;border:0!important;outline:none!important}
+textarea{resize:none!important}
+.field input,.field select,.field textarea{box-sizing:border-box;max-width:100%;border-radius:13px}
+.field input:not([type=checkbox]),.field select{min-height:46px}
+.mk-money-input input{min-height:42px!important}
