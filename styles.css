@@ -622,3 +622,11 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
   border:0 !important;outline:0 !important;box-shadow:none !important;
   background:transparent !important;
 }
+
+/* #55: Keep the limited-payment checkbox compact despite recurring input sizing. */
+#mkRecurringModal .switchline { display:flex; align-items:center; gap:10px; }
+#mkRecurringModal .switchline input[type="checkbox"] {
+  appearance:auto; -webkit-appearance:checkbox;
+  flex:0 0 18px; width:18px!important; min-width:18px; max-width:18px;
+  height:18px; margin:0; padding:0; border-radius:3px; accent-color:#bd7295;
+}
