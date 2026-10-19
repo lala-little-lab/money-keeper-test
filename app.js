@@ -416,7 +416,7 @@ function mkConfirmWithdrawal(card,due){
  if(due>new Date().toLocaleDateString('sv-SE')){alert('引落日以降に確認してください。');return}
  if(!account||!balances[account]||!Number.isSafeInteger(amount)||amount<=0){alert('引落口座または金額を確認してください。');return}
  if(!confirm(c.name+'の'+fmtMD(due)+'引落を確認しましたか？\n'+c.account+'から'+yen(amount)+'を差し引きます。\n※月の支出には再計上しません。'))return;
- balances[account].v-=amount;cashbook.unshift({date:due,text:c.name+' 引落（確認済み）',delta:-amount});
+ balances[account].v-=amount;cashbook.unshift({date:due,text:c.name+' 引落（確認済み）',delta:-amount,mkBillKey:key});
  mkPaidBills[key]={date:due,amount,account,confirmedAt:new Date().toISOString()};
  renderAll();openBillDetail(card);
 }
@@ -429,7 +429,36 @@ function moveBillItem(kind,idx,card,due,direction=1){if(mkIsPaid(card,due)){aler
 function reconcileBox(card,due){let st=statusForBill(card,due),pred=predictedAmount(card,due),actual=amountForBill(card,due);return `<div class="reconcile"><div class="subhead">カード会社の確定額と照合</div><div class="small">アプリ予測 ${yen(pred)}。通知・明細の確定額を入力して照合できます。</div><div class="field"><label>実際の請求確定額</label><input id="actual-${card}-${due}" type="text" inputmode="numeric" value="${st==='confirmed'&&actual?actual:''}" placeholder="金額"></div><div class="grid2"><button class="outline" onclick="checkBillAmount('${card}','${due}')">差額を見る</button><button class="btn" onclick="confirmBillAmount('${card}','${due}')">この金額で確定</button></div><div id="diff-${card}-${due}" class="small" style="margin-top:7px"></div></div>`}
 function checkBillAmount(card,due){let el=$('actual-'+card+'-'+due),n=moneyNum(el.value),pred=predictedAmount(card,due),d=n-pred,out=$('diff-'+card+'-'+due);if(n<0||!el.value){out.textContent='確定額を入力してね';return}out.innerHTML=d===0?'✓ アプリ予測と一致しています。':`差額 ${d>0?'+':''}${yen(d)}。内訳を見て翌月へ移す記録がないか確認するか、実額で確定できます。`}
 function confirmBillAmount(card,due){if(mkIsPaid(card,due)){alert('引落済みの請求額は変更できません。');return}let el=$('actual-'+card+'-'+due);if(!el.value)return checkBillAmount(card,due);let n=moneyNum(el.value);billAdjustments[card+'|'+due]={amount:n,status:'confirmed'};delete mkTodoHidden['check|'+card+'|'+due];renderAll();openBillDetail(card)}
-function openBillDetail(card){let c=cardDefs[card],[a,b]=visibleBills(card);$('billTitle').textContent=c.name+' 請求内訳';$('billDetail').innerHTML=`<div class="mk-bill-nav"><button class="outline" onclick="mkShiftBill('${card}',-1)">‹ 前の月</button><button class="outline" onclick="mkShiftBill('${card}',1)">次の月 ›</button></div>`+[a,b].map((due,i)=>{let st=statusForBill(card,due),amt=amountForBill(card,due),pred=predictedAmount(card,due),late=st==='confirmed'&&pred!==amt;return `<div class="billbox"><div class="billhead"><div><strong>${fmtMD(due)} 引落し${i===0?'':'予定'}</strong><div class="item-meta">記録＋定期支払いから集計</div></div><div><div style="text-align:right;font-weight:800">${yen(amt)}</div><span class="billstatus ${st}">${mkIsPaid(card,due)?'引落済み':statusText(st)}</span></div></div>${late?`<div class="warnbox">確定済み総額は ${yen(amt)} のままです。現在の内訳合計は ${yen(pred)}。後から追加した記録や未調整の請求額がないか確認できます。</div>`:''}<div class="subhead">記録一覧</div>${renderBillItems(card,due)}${mkIsPaid(card,due)?'<div class="small">✓ 引落済み（残高反映済み）</div>':`<button class="outline" style="width:100%;margin-top:8px" onclick="mkConfirmWithdrawal('${card}','${due}')" ${due>new Date().toLocaleDateString('sv-SE')||st!=='confirmed'?'disabled':''}>引落済みにする</button>`}${st!=='planned'||i===0?reconcileBox(card,due):''}</div>`}).join('');$('billModal').classList.remove('hidden')}
+function mkBillDatePassed(due){return due<=new Date().toLocaleDateString('sv-SE')}
+function mkUndoWithdrawal(card,due){
+ const key=card+'|'+due,entry=mkPaidBills[key];if(!entry)return;
+ if(!confirm(cardDefs[card].name+' '+fmtMD(due)+'の引落反映を取り消しますか？\n口座残高を'+yen(entry.amount)+'戻します。'))return;
+ if(!balances[entry.account]){alert('引落口座が見つかりません。');return}
+ balances[entry.account].v+=entry.amount;
+ const index=cashbook.findIndex(x=>x.mkBillKey===key);
+ if(index>=0)cashbook.splice(index,1);
+ else cashbook.unshift({date:new Date().toLocaleDateString('sv-SE'),text:cardDefs[card].name+' 引落取消（調整）',delta:entry.amount});
+ delete mkPaidBills[key];renderAll();openBillDetail(card);
+}
+function mkBillDetailsBlock(card,due){const items=itemsForBill(card,due);return `<details class="mk-bill-items"><summary>記録一覧（${items.length}件） <span class="mk-bill-expand">開く・閉じる</span></summary><div class="mk-bill-items-content">${renderBillItems(card,due)}</div></details>`}
+function openBillDetail(card){
+ const c=cardDefs[card],[a,b]=visibleBills(card);
+ $('billTitle').textContent=c.name+' 請求内訳';
+ const nav=`<div class="mk-bill-nav"><button class="outline" onclick="mkShiftBill('${card}',-1)">‹ 前の月</button><button class="outline" onclick="mkShiftBill('${card}',1)">次の月 ›</button></div>`;
+ const blocks=[a,b].map((due,i)=>{
+  const st=statusForBill(card,due),paid=mkIsPaid(card,due),amt=amountForBill(card,due),pred=predictedAmount(card,due),late=st==='confirmed'&&pred!==amt;
+  const head=`<div class="billhead"><div><strong>${fmtMD(due)} 引落し${i===0?'':'予定'}</strong><div class="item-meta">記録＋定期支払いから集計</div></div><div><div style="text-align:right;font-weight:800">${yen(amt)}</div><span class="billstatus ${st}">${paid?'引落済み':statusText(st)}</span></div></div>`;
+  if(i===1)return `<div class="billbox mk-bill-preview">${head}<div class="small" style="margin-top:8px">詳しい内訳・操作は「次の月」で確認できます。</div></div>`;
+  const warning=late?`<div class="warnbox">確定済み総額は ${yen(amt)} のままです。現在の内訳合計は ${yen(pred)}。追加した記録や未調整の請求額がないか確認できます。</div>`:'';
+  const reconciliation=paid?'<div class="small mk-bill-note">請求額確定済み・引落反映済み</div>':st==='confirmed'?`<div class="reconcile"><div class="subhead">カード会社の確定額と照合</div><div class="small">確定額 ${yen(amt)} ／ アプリ内訳 ${yen(pred)}</div><button class="outline mk-bill-small" onclick="mkShowBillReconcile('${card}','${due}')">確定額を修正・再照合</button><div id="mk-reconcile-${card}-${due}" class="hidden">${reconcileBox(card,due)}</div></div>`:reconcileBox(card,due);
+  let withdrawal='';
+  if(paid)withdrawal=`<div class="mk-bill-withdraw"><span class="small">✓ 引落済み（口座残高に反映済み）</span><button class="outline mk-bill-small" onclick="mkUndoWithdrawal('${card}','${due}')">反映を取り消す</button></div>`;
+  else if(st==='confirmed'&&amt>0)withdrawal=`<div class="mk-bill-withdraw"><button class="outline mk-bill-small" onclick="mkConfirmWithdrawal('${card}','${due}')" ${!mkBillDatePassed(due)?'disabled':''}>引落済みにする</button>${!mkBillDatePassed(due)?'<span class="small">引落日以降に確認できます</span>':''}</div>`;
+  return `<div class="billbox">${head}${warning}${reconciliation}${withdrawal}${mkBillDetailsBlock(card,due)}</div>`;
+ });
+ $('billDetail').innerHTML=nav+blocks.join('');$('billModal').classList.remove('hidden');initMoneyInputs();
+}
+function mkShowBillReconcile(card,due){$('mk-reconcile-'+card+'-'+due)?.classList.toggle('hidden')}
 function closeBillDetail(){$('billModal').classList.add('hidden')}
 function cardRow(card){let c=cardDefs[card],[a,b]=visibleBills(card),sa=statusForBill(card,a),sb=statusForBill(card,b);return `<div class="item"><div class="mk-card-heading"><div class="item-title">${c.name}</div><button type="button" class="mk-bill-check" onclick="openBillDetail('${card}')">請求額を確認 ›</button></div><div class="item-meta">締め日：${card==='rakuten'?'月末':c.closeDay+'日'} ／ 引落日：翌月${c.dueDay}日<br>引落口座：${c.account}</div><div class="row"><span>次回引落</span><strong>${fmtMD(a)} ${yen(amountForBill(card,a))}（${statusText(sa)}）</strong></div><div class="row"><span class="small">その次</span><span class="small">${fmtMD(b)} ${yen(amountForBill(card,b))}（${statusText(sb)}）</span></div></div>`}
 function renderDue(){

@@ -517,3 +517,24 @@ textarea{resize:none!important}
 #wishModal textarea{resize:none}
 
 .mk-bill-nav{display:flex;justify-content:space-between;gap:8px;margin:12px 0}.mk-recurring-sheet{max-height:88dvh;overscroll-behavior:contain}.mk-recurring-actions{display:flex;gap:6px;margin-top:12px}.mk-recurring-actions>*{flex:1;min-width:0}.mk-recurring-actions .btn{width:auto}
+
+/* Mobile recurring editor: prevent inherited grid widths and flex shrink */
+#mkRecurringModal{inset:0;width:100%;max-width:100vw;align-items:flex-end;justify-content:center;overflow:hidden}
+#mkRecurringModal .mk-recurring-sheet{width:100%;max-width:520px;min-width:0;max-height:calc(100dvh - 24px);overflow-x:hidden;overflow-y:auto;padding:16px;box-sizing:border-box}
+#mkRecurringModal .row{min-width:0;gap:10px;align-items:flex-start}
+#mkRecurringModal .row>strong{flex:1;min-width:0;overflow-wrap:anywhere}
+#mkRecurringModal .row>button{flex:0 0 auto;white-space:nowrap}
+#mkRecurringModal .grid2{grid-template-columns:repeat(2,minmax(0,1fr))}
+#mkRecurringModal .field{min-width:0}
+#mkRecurringModal input,#mkRecurringModal select,#mkRecurringModal textarea{min-width:0;max-width:100%;width:100%}
+#mkRecurringModal .mk-recurring-actions{display:flex;flex-wrap:wrap}
+#mkRecurringModal .mk-recurring-actions>button{min-width:0;white-space:nowrap}
+.mk-bill-items{border-top:1px solid var(--line);margin-top:14px;padding-top:12px}
+.mk-bill-items summary{cursor:pointer;font-weight:800;font-size:14px;list-style-position:inside}
+.mk-bill-expand{float:right;font-size:11px;font-weight:500;color:var(--muted)}
+.mk-bill-items-content{padding-top:9px}
+.mk-bill-withdraw{display:flex;justify-content:flex-end;align-items:center;gap:10px;flex-wrap:wrap;margin-top:12px}
+.mk-bill-small{width:auto!important;padding:8px 12px;font-size:12px;white-space:nowrap}
+.mk-bill-withdraw button:disabled{opacity:.45;cursor:not-allowed}
+.mk-bill-note{margin-top:10px}
+.mk-bill-preview{background:#fffdfd}
