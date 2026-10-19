@@ -566,3 +566,21 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 #billModal .mk-bill-expand {float:none;display:inline-flex;align-items:center;color:var(--muted);font-size:13px;}
 #billModal .mk-bill-expand::after {content:'▼';}
 #billModal .mk-bill-items[open] .mk-bill-expand::after {content:'▲';}
+
+/* 2026-10-19: 金額入力欄のフォーカス枠を既存の編集画面と統一。
+   枠は親要素だけに描画し、内側のinputには二重の枠・影を付けない。 */
+.money-input.mk-money-input {
+  border: 1px solid #dedfe4;
+  border-radius: 13px;
+  box-shadow: none;
+}
+.money-input.mk-money-input:focus-within {
+  border: 2px solid #c77c9b !important;
+  box-shadow: 0 0 0 3px rgba(199,124,155,.17) !important;
+}
+.money-input.mk-money-input > input,
+.money-input.mk-money-input > input:focus {
+  border: 0 !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
