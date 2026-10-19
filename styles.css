@@ -547,3 +547,22 @@ body > #mkRecurringModal > .mk-recurring-sheet {flex:0 1 520px!important;width:1
 .mk-bill-items summary::-webkit-details-marker {display:none;}
 .mk-bill-expand::after {content:'▼';font-size:13px;}
 .mk-bill-items[open] .mk-bill-expand::after {content:'▲';}
+
+/* v3: recurring editor uses the same independent bottom-sheet structure as wishlist. */
+body > #mkRecurringModal {position:fixed!important;inset:0!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;width:100%!important;max-width:none!important;padding:0!important;z-index:120!important;background:rgba(0,0,0,.38)!important;}
+body > #mkRecurringModal.hidden {display:none!important;}
+body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;flex:none!important;width:100%!important;max-width:520px!important;min-width:0!important;max-height:calc(100dvh - 20px)!important;margin:0!important;padding:18px 16px calc(20px + env(safe-area-inset-bottom))!important;overflow-y:auto!important;overflow-x:hidden!important;border-radius:22px 22px 0 0!important;background:var(--card)!important;}
+#mkRecurringModal .grid2 {grid-template-columns:repeat(2,minmax(0,1fr));}
+#mkRecurringModal .row > strong {font-size:18px;line-height:1.35;}
+#mkRecurringModal .row > button {background:#f8eef2;color:#493c42;}
+@media(max-width:360px){#mkRecurringModal .grid2{grid-template-columns:1fr;}}
+/* v3: bill details borrow the app's restrained rose/grey visual language. */
+#billModal .sheet {background:var(--card);border:1px solid var(--line);border-bottom:0;}
+#billModal .ghost {background:#f8eef2;color:#493c42;}
+#billModal .outline {border-color:var(--line);}
+#billModal .mk-bill-items {border-top:1px solid var(--line);}
+#billModal .mk-bill-items summary {display:flex;align-items:center;justify-content:flex-start;gap:5px;min-height:44px;color:var(--ink);font-size:14px;cursor:pointer;}
+#billModal .mk-bill-count {font-weight:600;color:var(--muted);}
+#billModal .mk-bill-expand {float:none;display:inline-flex;align-items:center;color:var(--muted);font-size:13px;}
+#billModal .mk-bill-expand::after {content:'▼';}
+#billModal .mk-bill-items[open] .mk-bill-expand::after {content:'▲';}

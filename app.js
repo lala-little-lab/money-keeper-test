@@ -440,7 +440,7 @@ function mkUndoWithdrawal(card,due){
  else cashbook.unshift({date:new Date().toLocaleDateString('sv-SE'),text:cardDefs[card].name+' 引落取消（調整）',delta:entry.amount});
  delete mkPaidBills[key];renderAll();openBillDetail(card);
 }
-function mkBillDetailsBlock(card,due){const items=itemsForBill(card,due);return `<details class="mk-bill-items"><summary>記録一覧（${items.length}件） <span class="mk-bill-expand" aria-hidden="true"></span></summary><div class="mk-bill-items-content">${renderBillItems(card,due)}</div></details>`}
+function mkBillDetailsBlock(card,due){const items=itemsForBill(card,due);return `<details class="mk-bill-items"><summary>記録一覧 <span class="mk-bill-count">（${items.length}件）</span><span class="mk-bill-expand" aria-hidden="true"></span></summary><div class="mk-bill-items-content">${renderBillItems(card,due)}</div></details>`}
 function openBillDetail(card){
  const c=cardDefs[card],[a,b]=visibleBills(card);
  $('billTitle').textContent=c.name+' 請求内訳';
