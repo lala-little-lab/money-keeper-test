@@ -601,3 +601,24 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
   border: 0 !important; box-shadow: none !important; outline: none !important;
 }
 .mk-inline-budget-field:focus-within { border-color: #c77c9b; }
+
+/* #54: category-budget inline editor has ONE border on its outer field.
+   Override the global focus rule and the dynamically inserted money wrapper. */
+.mk-inline-budget-field,
+.mk-inline-budget-field:focus-within {
+  border:1px solid #dfd9de !important;
+  outline:none !important;
+  box-shadow:none !important;
+}
+.mk-inline-budget-field:focus-within {border-color:#c77c9b !important;}
+.mk-inline-budget-field .money-input.mk-money-input,
+.mk-inline-budget-field .money-input.mk-money-input:focus-within {
+  border:0 !important;outline:0 !important;box-shadow:none !important;
+  background:transparent !important;min-height:0 !important;
+  flex:1 1 auto;min-width:0;
+}
+.mk-inline-budget-field .money-input.mk-money-input > input,
+.mk-inline-budget-field .money-input.mk-money-input > input:focus {
+  border:0 !important;outline:0 !important;box-shadow:none !important;
+  background:transparent !important;
+}

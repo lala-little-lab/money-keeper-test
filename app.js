@@ -26,7 +26,7 @@ function attachMoneyInput(input){
  input.addEventListener('blur',()=>formatMoneyElement(input));
 }
 function refreshMoneyInputs(){document.querySelectorAll('input[data-money-ready="1"]').forEach(input=>{if(document.activeElement!==input)formatMoneyElement(input)})}
-function initMoneyInputs(){document.querySelectorAll('input').forEach(input=>{if(MK_MONEY_FIELDS.has(input.id)||input.id.startsWith('actual-'))attachMoneyInput(input)})}
+function initMoneyInputs(){document.querySelectorAll('input').forEach(input=>{if(MK_MONEY_FIELDS.has(input.id)||input.id.startsWith('actual-')||input.id==='mkInlineBudgetAmount')attachMoneyInput(input)})}
 let moneyPromptAllowBlank=false;
 function openMoneyPrompt(title,current,cb,opt={}){
  moneyPromptSave=cb;moneyPromptMin=opt.min??0;moneyPromptAllowBlank=!!opt.allowBlankAsZero;
@@ -530,7 +530,7 @@ $('budgetRows').innerHTML=names.map(c=>{
  const bar=b>0?`<div class="progress mk-category-progress"><div style="width:${Math.min(100,v/b*100)}%"></div></div>`:'';
  const budgetText=b===null||b===undefined?'予算未設定':'予算 '+yen(b);
  const remain=b>0?`<span class="${v>b?'mk-over-budget':''}">${v>b?'超過 '+yen(v-b):'残り '+yen(b-v)}</span>`:'';
- return `<div class="mk-category-row"><div class="row mk-category-top"><strong>${safeHtml(c)}</strong><span class="mk-category-spend"><span class="mk-category-muted">支出</span><button type="button" class="mk-category-link" onclick="mkOpenCategoryHistory(decodeURIComponent('${encoded}'))" title="この月の履歴を見る">${yen(v)} ›</button>${trend}</span></div>${bar}<div class="row mk-category-bottom"><span class="mk-category-budget"><span>${budgetText}</span>${edit}</span>${remain}</div>${expanded?`<form class="mk-inline-budget" onsubmit="saveInlineCategoryBudget(event)"><label for="mkInlineBudgetAmount">選択月の予算</label><div class="mk-inline-budget-entry"><div class="mk-inline-budget-field"><span>¥</span><input id="mkInlineBudgetAmount" type="number" inputmode="decimal" min="0" step="1" autocomplete="off" value="${b===null||b===undefined?'':b}" placeholder="金額を入力"></div><button type="submit" class="primary mk-inline-budget-confirm">決定</button></div><div class="small">0円で未設定に戻します。</div></form>`:''}</div>`;
+ return `<div class="mk-category-row"><div class="row mk-category-top"><strong>${safeHtml(c)}</strong><span class="mk-category-spend"><span class="mk-category-muted">支出</span><button type="button" class="mk-category-link" onclick="mkOpenCategoryHistory(decodeURIComponent('${encoded}'))" title="この月の履歴を見る">${yen(v)} ›</button>${trend}</span></div>${bar}<div class="row mk-category-bottom"><span class="mk-category-budget"><span>${budgetText}</span>${edit}</span>${remain}</div>${expanded?`<form class="mk-inline-budget" onsubmit="saveInlineCategoryBudget(event)"><label for="mkInlineBudgetAmount">選択月の予算</label><div class="mk-inline-budget-entry"><div class="mk-inline-budget-field"><span>¥</span><input id="mkInlineBudgetAmount" type="text" inputmode="numeric" autocomplete="off" value="${b===null||b===undefined?'':b}" placeholder="金額を入力"></div><button type="submit" class="primary mk-inline-budget-confirm">決定</button></div><div class="small">0円で未設定に戻します。</div></form>`:''}</div>`;
 }).join('')||'<div class="small">カテゴリはまだありません。</div>';
 const sum=names.reduce((total,c)=>{const amount=mkBudgetAt(month,c);return total+(Number.isFinite(Number(amount))&&Number(amount)>0?Number(amount):0)},0);
 $('mkCategoryBudgetSum').innerHTML=`<span>設定済みカテゴリ予算の合計</span><strong>${yen(sum)}</strong>`;
@@ -557,7 +557,7 @@ function editCategoryBudgetDirect(c){
  renderBudget();
  if(mkInlineBudgetCategory){
   const input=$('mkInlineBudgetAmount');
-  if(input){input.focus({preventScroll:true});requestAnimationFrame(()=>input.scrollIntoView({block:'center',behavior:'instant'}))}
+  if(input){initMoneyInputs();formatMoneyElement(input);input.focus({preventScroll:true});requestAnimationFrame(()=>input.scrollIntoView({block:'center',behavior:'instant'}))}
  }
 }
 function cancelInlineCategoryBudget(){mkInlineBudgetCategory=null;renderBudget()}
@@ -565,8 +565,9 @@ function saveInlineCategoryBudget(e){
  e.preventDefault();
  const input=$('mkInlineBudgetAmount');
  const raw=input?input.value.trim():'';
- const n=raw===''?0:Number(raw);
- if(!Number.isSafeInteger(n)||n<0){if(input)input.setCustomValidity('0以上の整数を入力してね');if(input)input.reportValidity();return}
+ const normalized=raw.replace(/[¥￥,，\s]/g,'');
+ const n=normalized===''?0:Number(normalized);
+ if(!/^[0-9]*$/.test(normalized)||!Number.isSafeInteger(n)||n<0){if(input)input.setCustomValidity('0以上の整数を入力してね');if(input)input.reportValidity();return}
  if(!categoryBudgetHistory[analysisMonth])categoryBudgetHistory[analysisMonth]={};
  categoryBudgetHistory[analysisMonth][mkInlineBudgetCategory]=n||null;
  mkInlineBudgetCategory=null;
