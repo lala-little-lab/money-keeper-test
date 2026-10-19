@@ -396,7 +396,8 @@ function addMonthsYM(y,m,add){let z=(y*12+(m-1))+add;return [Math.floor(z/12),z%
 function dueForPurchase(card,date){let [y,m,d]=date.split('-').map(Number),c=cardDefs[card];if(!c)return'';let add;if(card==='rakuten')add=1;else add=d<=c.closeDay?1:2;let [yy,mm]=addMonthsYM(y,m,add);return dateISO(yy,mm,c.dueDay)}
 function nextMonthlyDue(card,due){let [y,m]=due.split('-').map(Number),[yy,mm]=addMonthsYM(y,m,1);return dateISO(yy,mm,cardDefs[card].dueDay)}
 function fmtMD(iso){let p=iso.split('-');return Number(p[1])+'/'+Number(p[2])}
-function statusForBill(card,due){let adj=billAdjustments[card+'|'+due];if(adj&&adj.status==='confirmed')return'confirmed';if(cardDefs[card].known[due]!=null)return'confirmed';let c=cardDefs[card], [y,m]=due.split('-').map(Number);let [cy,cm]=addMonthsYM(y,m,-1);let close=dateISO(cy,cm,Math.min(c.closeDay,new Date(cy,cm,0).getDate()));let today=new Date().toISOString().slice(0,10);return today>close?'candidate':'planned'}
+function statusForBill(card,due){let adj=billAdjustments[card+'|'+due];if(adj&&adj.status==='confirmed')return'confirmed';if(adj&&adj.status==='cancelled')return billUnconfirmedStatus(card,due);if(cardDefs[card].known[due]!=null)return'confirmed';let c=cardDefs[card], [y,m]=due.split('-').map(Number);let [cy,cm]=addMonthsYM(y,m,-1);let close=dateISO(cy,cm,Math.min(c.closeDay,new Date(cy,cm,0).getDate()));let today=new Date().toISOString().slice(0,10);return today>close?'candidate':'planned'}
+function billUnconfirmedStatus(card,due){let c=cardDefs[card],[y,m]=due.split('-').map(Number),[cy,cm]=addMonthsYM(y,m,-1),close=dateISO(cy,cm,Math.min(c.closeDay,new Date(cy,cm,0).getDate()));return new Date().toLocaleDateString('sv-SE')>close?'candidate':'planned'}
 function statusText(s){return s==='confirmed'?'確定':s==='candidate'?'確定候補':'予定'}
 function allocRecorded(card){let out=[];txs.forEach((t,idx)=>{if(t.type==='expense'){let c=finalCardForPayment(t.payment,t.rakutenPaySource);if(c!==card)return;let baseDue=t.billOverride||dueForPurchase(card,t.date),n=Math.max(1,Number(t.installments||1)),total=Number(t.billed||t.paid||t.amount||0),base=Math.floor(total/n),rem=total-base*n;for(let i=0;i<n;i++){let due=i?nextMonthlyDue(card,baseDue):baseDue;for(let j=1;j<i;j++)due=nextMonthlyDue(card,due);out.push({kind:'tx',idx,date:t.date,label:(t.memo||t.category)+(n>1?`（${i+1}/${n}回）`:''),amount:base+(i<rem?1:0),due})}}else if(t.type==='lend'){let c=finalCardForPayment(t.payment,t.rakutenPaySource);if(c!==card)return;let baseDue=t.billOverride||dueForPurchase(card,t.date),n=Math.max(1,Number(t.installments||1)),total=Number(t.billed??t.gross??0),base=Math.floor(total/n),rem=total-base*n;for(let i=0;i<n;i++){let due=baseDue;for(let j=0;j<i;j++)due=nextMonthlyDue(card,due);out.push({kind:'tx',idx,date:t.date,label:(t.memo||t.category||'立替')+'（立替・'+(t.person||'相手')+'）'+(n>1?`（${i+1}/${n}回）`:''),amount:base+(i<rem?1:0),due})}}else if(t.type==='charge'){let c=finalCardForPayment(t.source);if(c!==card)return;let due=t.billOverride||dueForPurchase(card,t.date);out.push({kind:'charge',idx,date:t.date,label:(balances[t.target]?.name||t.target)+'チャージ',amount:Number(t.billed||t.amount||0),due})}});return out}
 function timingDay(r){let m=String(r.timing).match(/(^|[^0-9])(\d{1,2})日/);return m?Number(m[2]):null}
@@ -404,7 +405,7 @@ function recurringForDue(card,due){let c=cardDefs[card],[y,m]=due.split('-').map
 function billItemKey(x,due){return x.kind+'|'+x.idx+'|'+due}
 function itemsForBill(card,due){return [...allocRecorded(card).filter(x=>x.due===due),...recurringForDue(card,due)].map(x=>{let a=billItemAdjustments[billItemKey(x,due)];return a!=null?{...x,originalAmount:x.amount,amount:a}:x})}
 function predictedAmount(card,due){return itemsForBill(card,due).reduce((s,x)=>s+x.amount,0)}
-function amountForBill(card,due){let a=billAdjustments[card+'|'+due];if(a&&a.amount!=null)return a.amount;if(cardDefs[card].known[due]!=null)return cardDefs[card].known[due];return predictedAmount(card,due)}
+function amountForBill(card,due){let a=billAdjustments[card+'|'+due];if(a&&a.status==='cancelled')return predictedAmount(card,due);if(a&&a.amount!=null)return a.amount;if(cardDefs[card].known[due]!=null)return cardDefs[card].known[due];return predictedAmount(card,due)}
 let mkBillOffset={};
 let mkPaidBills={};
 const mkAccountForBill={'西武信用金庫':'seibu','楽天銀行':'rakbank','三井住友銀行':'smbc','ゆうちょ':'yucho'};
@@ -429,6 +430,15 @@ function moveBillItem(kind,idx,card,due,direction=1){if(mkIsPaid(card,due)){aler
 function reconcileBox(card,due){let st=statusForBill(card,due),pred=predictedAmount(card,due),actual=amountForBill(card,due);return `<div class="reconcile"><div class="subhead">カード会社の確定額と照合</div><div class="small">アプリ予測 ${yen(pred)}。通知・明細の確定額を入力して照合できます。</div><div class="field"><label>実際の請求確定額</label><input id="actual-${card}-${due}" type="text" inputmode="numeric" value="${st==='confirmed'&&actual?actual:''}" placeholder="金額"></div><div class="grid2"><button class="outline" onclick="checkBillAmount('${card}','${due}')">差額を見る</button><button class="btn" onclick="confirmBillAmount('${card}','${due}')">この金額で確定</button></div><div id="diff-${card}-${due}" class="small" style="margin-top:7px"></div></div>`}
 function checkBillAmount(card,due){let el=$('actual-'+card+'-'+due),n=moneyNum(el.value),pred=predictedAmount(card,due),d=n-pred,out=$('diff-'+card+'-'+due);if(n<0||!el.value){out.textContent='確定額を入力してね';return}out.innerHTML=d===0?'✓ アプリ予測と一致しています。':`差額 ${d>0?'+':''}${yen(d)}。内訳を見て翌月へ移す記録がないか確認するか、実額で確定できます。`}
 function confirmBillAmount(card,due){if(mkIsPaid(card,due)){alert('引落済みの請求額は変更できません。');return}let el=$('actual-'+card+'-'+due);if(!el.value)return checkBillAmount(card,due);let n=moneyNum(el.value);billAdjustments[card+'|'+due]={amount:n,status:'confirmed'};delete mkTodoHidden['check|'+card+'|'+due];renderAll();openBillDetail(card)}
+function mkCancelBillConfirmation(card,due){
+ const key=card+'|'+due;
+ if(mkIsPaid(card,due)){alert('引落反映済みの請求は、先に引落反映を取り消してください。');return}
+ if(statusForBill(card,due)!=='confirmed')return;
+ if(!confirm(cardDefs[card].name+' '+fmtMD(due)+'の請求額の確定を取り消しますか？\n請求額は記録・定期支払いからの予測額に戻ります。元の記録や内訳は削除されません。'))return;
+ billAdjustments[key]={status:'cancelled'};
+ delete mkTodoHidden['check|'+card+'|'+due];
+ renderAll();openBillDetail(card);
+}
 function mkBillDatePassed(due){return due<=new Date().toLocaleDateString('sv-SE')}
 function mkUndoWithdrawal(card,due){
  const key=card+'|'+due,entry=mkPaidBills[key];if(!entry)return;
@@ -450,7 +460,7 @@ function openBillDetail(card){
   const head=`<div class="billhead"><div><strong>${fmtMD(due)} 引落し${i===0?'':'予定'}</strong><div class="item-meta">記録＋定期支払いから集計</div></div><div><div style="text-align:right;font-weight:800">${yen(amt)}</div><span class="billstatus ${st}">${paid?'引落済み':statusText(st)}</span></div></div>`;
   if(i===1)return `<div class="billbox mk-bill-preview">${head}<div class="small" style="margin-top:8px">詳しい内訳・操作は「次の月」で確認できます。</div></div>`;
   const warning=late?`<div class="warnbox">確定済み総額は ${yen(amt)} のままです。現在の内訳合計は ${yen(pred)}。追加した記録や未調整の請求額がないか確認できます。</div>`:'';
-  const reconciliation=paid?'<div class="small mk-bill-note">請求額確定済み・引落反映済み</div>':st==='confirmed'?`<div class="reconcile"><div class="subhead">カード会社の確定額と照合</div><div class="small">確定額 ${yen(amt)} ／ アプリ内訳 ${yen(pred)}</div><button class="outline mk-bill-small" onclick="mkShowBillReconcile('${card}','${due}')">確定額を修正・再照合</button><div id="mk-reconcile-${card}-${due}" class="hidden">${reconcileBox(card,due)}</div></div>`:reconcileBox(card,due);
+  const reconciliation=paid?'<div class="small mk-bill-note">請求額確定済み・引落反映済み</div>':st==='confirmed'?`<div class="reconcile"><div class="subhead">カード会社の確定額と照合</div><div class="small">確定額 ${yen(amt)} ／ アプリ内訳 ${yen(pred)}</div><button class="outline mk-bill-small" onclick="mkShowBillReconcile('${card}','${due}')">確定額を修正・再照合</button><div id="mk-reconcile-${card}-${due}" class="hidden">${reconcileBox(card,due)}<div class="mk-bill-cancel-confirm"><button type="button" class="outline mk-bill-small" onclick="mkCancelBillConfirmation('${card}','${due}')">確定を取り消す</button></div></div></div>`:reconcileBox(card,due);
   let withdrawal='';
   if(paid)withdrawal=`<div class="mk-bill-withdraw"><span class="small">✓ 引落済み（口座残高に反映済み）</span><button class="outline mk-bill-small" onclick="mkUndoWithdrawal('${card}','${due}')">反映を取り消す</button></div>`;
   else if(st==='confirmed'&&amt>0)withdrawal=`<div class="mk-bill-withdraw"><button class="outline mk-bill-small" onclick="mkConfirmWithdrawal('${card}','${due}')" ${!mkBillDatePassed(due)?'disabled':''}>引落済みにする</button>${!mkBillDatePassed(due)?'<span class="small">引落日以降に確認できます</span>':''}</div>`;

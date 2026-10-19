@@ -48,3 +48,9 @@ Test deployment retry 2026-10-16
 - Bill item accordion: replace confusing open/close label with ▼ / ▲.
 - Recurring editor: move modal to body and enforce viewport-wide overlay with 520px max sheet to fix narrow left-aligned popup.
 - Test-only; mobile browser visual verification still needed.
+
+## #55 correction — bill confirmation cancellation
+- Add `確定を取り消す` inside expanded `確定額を修正・再照合`, with confirmation prompt.
+- Restore unconfirmed status and calculated amount; do not delete transactions or bill items.
+- Prevent cancellation after withdrawal is reflected; use existing withdrawal reversal first.
+- No real personal data included. Bank-preparation and recurring debit integration remain out of scope.

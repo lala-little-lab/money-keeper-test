@@ -630,3 +630,6 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
   flex:0 0 18px; width:18px!important; min-width:18px; max-width:18px;
   height:18px; margin:0; padding:0; border-radius:3px; accent-color:#bd7295;
 }
+
+/* Bill confirmation cancellation stays inside the existing reconciliation disclosure. */
+.mk-bill-cancel-confirm{margin-top:12px;padding-top:12px;border-top:1px solid var(--line,#e8e2e5)}
