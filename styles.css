@@ -584,3 +584,20 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
   outline: none !important;
   box-shadow: none !important;
 }
+
+/* Category budget editor: the outer field already supplies the border.
+   Money formatter adds a nested wrapper; keep that wrapper visually neutral. */
+.mk-inline-budget-field .money-input.mk-money-input,
+.mk-inline-budget-field .money-input.mk-money-input:focus-within {
+  flex: 1 1 auto; min-width: 0; width: auto; min-height: 0;
+  border: 0 !important; border-radius: 0 !important;
+  box-shadow: none !important; outline: none !important;
+  background: transparent !important; overflow: visible;
+}
+.mk-inline-budget-field .money-input.mk-money-input .money-prefix { display: none !important; }
+.mk-inline-budget-field .money-input.mk-money-input input,
+.mk-inline-budget-field .money-input.mk-money-input input:focus {
+  width: 100%; min-width: 0; padding: 4px 0 !important;
+  border: 0 !important; box-shadow: none !important; outline: none !important;
+}
+.mk-inline-budget-field:focus-within { border-color: #c77c9b; }
