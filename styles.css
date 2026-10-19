@@ -538,3 +538,12 @@ textarea{resize:none!important}
 .mk-bill-withdraw button:disabled{opacity:.45;cursor:not-allowed}
 .mk-bill-note{margin-top:10px}
 .mk-bill-preview{background:#fffdfd}
+
+/* Recurring modal is mounted directly under body to avoid inherited page layout. */
+body > #mkRecurringModal {position:fixed!important;inset:0!important;width:100vw!important;max-width:none!important;display:flex!important;justify-content:center!important;align-items:flex-end!important;z-index:110!important;padding:0!important;}
+body > #mkRecurringModal.hidden {display:none!important;}
+body > #mkRecurringModal > .mk-recurring-sheet {flex:0 1 520px!important;width:100%!important;max-width:520px!important;min-width:0!important;max-height:calc(100dvh - 16px)!important;overflow-y:auto!important;overflow-x:hidden!important;margin:0!important;}
+.mk-bill-items summary {display:flex;align-items:center;justify-content:space-between;gap:10px;list-style:none;}
+.mk-bill-items summary::-webkit-details-marker {display:none;}
+.mk-bill-expand::after {content:'▼';font-size:13px;}
+.mk-bill-items[open] .mk-bill-expand::after {content:'▲';}

@@ -42,3 +42,9 @@ Test deployment retry 2026-10-16
 - 引落反映の取り消し（口座残高・通帳の復元）。旧バージョンで反映した通帳には識別子がないため、取消調整行を記録する場合があります。
 - 日本の祝日・銀行休業日による引落日自動補正は未実装。実際の引落日がずれる場合は引落確認を急がないでください。
 - 実機の総合テスト・実データ移行は未完了。実データ入力禁止。
+
+
+## UI hotfix (2026-10-19)
+- Bill item accordion: replace confusing open/close label with ▼ / ▲.
+- Recurring editor: move modal to body and enforce viewport-wide overlay with 520px max sheet to fix narrow left-aligned popup.
+- Test-only; mobile browser visual verification still needed.
