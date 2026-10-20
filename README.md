@@ -54,3 +54,11 @@ Test deployment retry 2026-10-16
 - Restore unconfirmed status and calculated amount; do not delete transactions or bill items.
 - Prevent cancellation after withdrawal is reflected; use existing withdrawal reversal first.
 - No real personal data included. Bank-preparation and recurring debit integration remain out of scope.
+
+## 特別費 UI 改善（2026-10-21 / テスト版）
+- カテゴリを複数選択し、選択した行の予算を直接編集。金額空欄は「予算未設定」、0円は0円予算として区別。
+- 金額欄の右の「クリア」で予算だけを未設定に戻す。カテゴリ選択は維持。
+- 支出がある未選択カテゴリはイベント詳細に自動表示。支出がなくなれば非表示（手動選択したカテゴリは維持）。
+- イベントの記録一覧は折りたたみ、全件表示、イベント内カテゴリで絞り込み。
+- 編集フォームは「変更を保存」、新規フォームは「作成」。保存まではドラフト扱い。
+- 実機の表示・操作テストは未実施。架空データで確認してください。

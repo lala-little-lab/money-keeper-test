@@ -633,3 +633,17 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 
 /* Bill confirmation cancellation stays inside the existing reconciliation disclosure. */
 .mk-bill-cancel-confirm{margin-top:12px;padding-top:12px;border-top:1px solid var(--line,#e8e2e5)}
+
+/* Special expense category selection, budget editing and transaction list */
+.mk-event-select-btn{width:100%;margin:8px 0;text-align:left}
+.mk-event-cat-picker{max-height:240px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:#fff;padding:5px 9px;margin-bottom:8px}
+.mk-event-check{display:flex;align-items:center;gap:9px;padding:8px 3px;font-size:13px;border-bottom:1px solid var(--line)}
+.mk-event-check:last-child{border-bottom:0}.mk-event-check input{width:17px;height:17px;flex:none}
+.mk-event-budget-row{display:grid;grid-template-columns:minmax(0,1fr) 112px 57px;gap:6px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.mk-event-budget-label{font-size:12px;font-weight:700;min-width:0;overflow-wrap:anywhere}
+.mk-event-budget-row input{min-width:0;padding:9px 7px;font-size:13px;text-align:right}
+.mk-event-budget-row .ghost{padding:9px 3px;font-size:11px;white-space:nowrap}
+.mk-event-remain{text-align:right;font-size:12px;color:var(--muted);margin-top:4px}
+.mk-event-record-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:15px}
+.mk-event-record-toggle{font-size:13px;font-weight:800;text-align:left;background:transparent;padding:8px 0;white-space:nowrap}
+.mk-event-record-filter{width:120px;max-width:45%;min-width:0;padding:7px 5px;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
