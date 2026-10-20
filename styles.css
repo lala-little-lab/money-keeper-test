@@ -665,3 +665,25 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-event-budget-row .mk-event-money-field input{border:0;outline:none;padding:9px 5px 9px 2px;min-width:0;width:100%;font-size:12px;text-align:right}
 .mk-event-budget-row .ghost{padding:9px 1px;font-size:10px}
 @media(min-width:420px){.mk-event-budget-row{grid-template-columns:minmax(0,1fr) 115px 52px}}
+
+/* #59: compact special-expense controls */
+.mk-event-budget-row{grid-template-columns:minmax(0,1fr) 95px 43px;gap:5px}
+.mk-event-budget-row .mk-event-money-field input{text-align:left;padding:8px 2px;font-size:12px}
+.mk-event-yen{padding-left:6px}
+.mk-event-budget-row .ghost{font-size:10px;padding:8px 1px}
+@media(min-width:420px){.mk-event-budget-row{grid-template-columns:minmax(0,1fr) 102px 46px}}
+.mk-event-over{color:#c83b50;font-weight:800}
+.mk-event-topline{display:flex;align-items:center;gap:6px}
+.mk-event-topline .event-head{min-width:0;flex:1}
+.mk-event-small-action{font-size:11px!important;padding:6px 9px!important;width:auto!important;white-space:nowrap;min-height:30px}
+.mk-event-bottom-actions{display:flex;justify-content:flex-end;margin-top:9px}
+.mk-event-record-filter{width:180px;max-width:55%;flex:0 1 180px}
+.mk-event-suggestion{margin:8px 0 10px}
+.mk-event-suggest-card{border:1px solid #ebd5df;background:#fffafc;border-radius:13px;padding:9px 11px;margin-bottom:7px}
+.mk-event-suggest-top,.mk-event-suggest-bottom{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:9px;align-items:center}
+.mk-event-suggest-top{font-size:10px;color:#766773;margin-bottom:6px}
+.mk-event-suggest-bottom strong{font-size:14px;min-width:0;overflow-wrap:anywhere;padding-left:5px}
+.mk-event-fixed,.mk-event-switch{border:1px solid #e6cbd7;border-radius:8px;background:white;color:#6e5863;justify-self:stretch;font-size:11px;font-weight:700;padding:5px 7px}
+.mk-event-fixed{justify-self:end;font-size:10px;padding:4px 9px}
+.mk-event-switch{font-size:12px;padding:8px 7px}
+.mk-event-fixed.active,.mk-event-switch.active{background:#e78cab;color:white;border-color:#e78cab}

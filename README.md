@@ -67,3 +67,10 @@ Test deployment retry 2026-10-16
 - Widen transaction category filter, prioritize spending amount, add category picker chevron.
 - Show currency prefix and thousands separators in event budget rows; reclaim label width.
 - Test build only; verify mobile layout and data persistence before production.
+
+## #59 Special Expenses UI (test)
+- Record form: date-scoped optional event suggestion, independent ON/OFF and per-event fixed default (saved in localStorage); default OFF unless fixed.
+- Special expense category budget compact left-aligned yen input; overbudget shown as 超過.
+- Event transaction category filter remains visible while collapsed; selecting expands.
+- Event editing replaces the original card inline, with compact edit and archive controls.
+- Generic special expense icon changed to 🌟; individual event names are untouched.
