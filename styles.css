@@ -647,3 +647,21 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-event-record-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:15px}
 .mk-event-record-toggle{font-size:13px;font-weight:800;text-align:left;background:transparent;padding:8px 0;white-space:nowrap}
 .mk-event-record-filter{width:120px;max-width:45%;min-width:0;padding:7px 5px;font-size:12px;text-overflow:ellipsis;white-space:nowrap}
+
+/* #58 Special expense visual refinements */
+.mk-event-record-filter{width:180px;max-width:55%;flex:0 1 180px}
+.mk-event-record-toggle{flex:0 0 auto}
+.mk-event-category-summary{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.mk-event-category-name{min-width:0;flex:1;font-size:14px;overflow-wrap:anywhere}
+.mk-event-category-spent{flex:none;text-align:right;font-size:17px;font-weight:800;white-space:nowrap}
+.mk-event-category-secondary{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:4px 15px;color:var(--muted);font-size:11px;margin-top:4px}
+.mk-event-select-btn{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.mk-event-select-btn span:last-child{font-size:12px;color:var(--muted)}
+.mk-event-budget-row{grid-template-columns:minmax(0,1fr) 103px 49px;gap:5px}
+.mk-event-budget-label{font-size:12px;overflow-wrap:normal;word-break:normal}
+.mk-event-money-field{display:flex;align-items:center;min-width:0;border:1px solid #dedfe4;border-radius:12px;background:#fff;overflow:hidden}
+.mk-event-money-field:focus-within{border-color:#5965f2}
+.mk-event-yen{padding-left:7px;color:#555;font-size:12px;flex:none}
+.mk-event-budget-row .mk-event-money-field input{border:0;outline:none;padding:9px 5px 9px 2px;min-width:0;width:100%;font-size:12px;text-align:right}
+.mk-event-budget-row .ghost{padding:9px 1px;font-size:10px}
+@media(min-width:420px){.mk-event-budget-row{grid-template-columns:minmax(0,1fr) 115px 52px}}

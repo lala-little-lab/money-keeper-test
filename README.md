@@ -62,3 +62,8 @@ Test deployment retry 2026-10-16
 - イベントの記録一覧は折りたたみ、全件表示、イベント内カテゴリで絞り込み。
 - 編集フォームは「変更を保存」、新規フォームは「作成」。保存まではドラフト扱い。
 - 実機の表示・操作テストは未実施。架空データで確認してください。
+
+## #58 Special expenses display adjustments
+- Widen transaction category filter, prioritize spending amount, add category picker chevron.
+- Show currency prefix and thousands separators in event budget rows; reclaim label width.
+- Test build only; verify mobile layout and data persistence before production.
