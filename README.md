@@ -1,6 +1,6 @@
-# Money Keeper テスト版 #68
+# Money Keeper テスト版 #69
 
-#61をベースに、カテゴリの重ね表示プルダウンと支払方法の選択枠線のみ変更。クリアボタンの位置・動作、上段とやりとりのボタン配置は#61のまま。カテゴリ選択に伴うページの自動スクロールは追加していません。
+#68を基準に、記録画面のクリアボタンのアイコンだけをFluent UI System Icons「Arrow Counterclockwise Dashes」Regularに変更。位置・サイズ・枠・背景・色（既存ボタン色を継承）・動作は維持。外部通信なしで表示するSVGをHTML内に含めています。
 
 # Money Keeper — Step2 IndexedDB test draft
 
@@ -81,3 +81,29 @@ Test deployment retry 2026-10-16
 
 
 #61: イベント名ボタンで特別費ON/OFF（右寄せ72%、ONピンク枠＋左バッジ、OFFグレー枠＋左バッジ）。支払方法の表示・内部状態を記録後も一致させて引き継ぎ、未選択の文字を細字化。記録画面にリセットアイコン追加（確認なし、タブ移動では入力保持、ONで固定の設定は維持）。
+
+## Third-party icon notice
+
+The Arrow Counterclockwise Dashes icon is from Microsoft Fluent UI System Icons (Regular, 24px), https://github.com/microsoft/fluentui-system-icons.
+
+MIT License
+
+Copyright (c) 2020 Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
