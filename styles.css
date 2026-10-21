@@ -734,3 +734,11 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 #record #modes .mk-record-reset{width:30px;height:30px;top:3px;border-radius:9px}
 #record #modes .mk-record-reset svg{width:19px;height:19px}
 @media(max-width:390px){#record #modes{padding-right:32px;column-gap:3px}#record #modes>.mode-choice{padding:8px 7px;font-size:12px}#record #modes .mk-record-reset{width:28px;height:28px}}
+
+/* #64: Restore original mode-choice sizes. Reset is independent in the second row. */
+#record #modes{position:static;padding-right:0;min-height:0;column-gap:6px;row-gap:6px}
+#record #modes>.mode-choice{padding:9px 12px;font-size:14px;white-space:nowrap}
+#record .interaction-row{display:flex;align-items:center;gap:6px;min-height:40px}
+#record .interaction-row #recordResetBtn{position:static;order:99;margin-left:auto;width:37px;height:37px;flex:none;padding:0;border-radius:11px;display:flex;align-items:center;justify-content:center}
+#record .interaction-row #recordResetBtn svg{display:block;width:23px;height:23px;flex:none}
+@media(max-width:390px){#record #modes{padding-right:0;column-gap:6px}#record #modes>.mode-choice{padding:9px 12px;font-size:14px}#record .interaction-row #recordResetBtn{width:37px;height:37px}}
