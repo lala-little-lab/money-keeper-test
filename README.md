@@ -1,3 +1,20 @@
+# Money Keeper テスト版 #72（2026-10-22）
+
+- #70の到達位置・通常時とイベント期間中の計算を維持。
+- 自動移動を#62と同じブラウザ標準のsmoothに変更（上下両方向）。
+- 手動操作と上限処理は即時追従を維持。移動中に閉じる／操作する場合は、その位置で自動移動を停止。
+- 編集画面・クリアボタン・他の機能は変更なし。実機で動きを確認してください。
+- ブラウザ確認：3画面サイズ×3種類×イベント有無の18条件で到達位置・選択・位置保持を確認。各画面サイズで上下の滑らかな移動、移動途中の停止、手動スクロール上限も確認。
+- #71はユーザー側で#62を再確認した際のGitHubアップロード番号のため欠番。
+
+## #70の変更・確認記録
+
+#70：記録画面のカテゴリ展開時に自動スクロール。通常／イベント枠あり（OFFでも表示時は対象）で位置を調整。任意項目・もっと見る・分割回数・楽天Pay追加欄を閉じた標準状態を基準に、記録ボタン下端と固定タブの間に24pxを確保。立替2種類も、同じ日付の支出画面と同じカテゴリ位置。現行ではイベント枠自体は支出のみ表示ですが、立替でも期間に応じた高さを使用します。開いている間の手動スクロールはカテゴリ枠上端8pxまで。閉じた後は現在位置を保持し制限を解除。追加欄の開閉状態や入力内容は変更しません。小さい画面ではカテゴリ枠を画面内に残すことを優先します。ブラウザで3画面サイズ×3種類×期間有無の位置・選択・スクロール保持と、タッチ操作による上限／戻しを確認済み。実機確認待ち。
+
+## #69の変更
+
+#68を基準に、記録画面のクリアボタンのアイコンだけをFluent UI System Icons「Arrow Counterclockwise Dashes」Regularに変更。位置・サイズ・枠・背景・色（既存ボタン色を継承）・動作は維持。外部通信なしで表示するSVGをHTML内に含めています。
+
 # Money Keeper — Step2 IndexedDB test draft
 
 This is a **local test build**, not production-ready. Do not enter real personal financial data.
@@ -77,3 +94,29 @@ Test deployment retry 2026-10-16
 
 
 #61: イベント名ボタンで特別費ON/OFF（右寄せ72%、ONピンク枠＋左バッジ、OFFグレー枠＋左バッジ）。支払方法の表示・内部状態を記録後も一致させて引き継ぎ、未選択の文字を細字化。記録画面にリセットアイコン追加（確認なし、タブ移動では入力保持、ONで固定の設定は維持）。
+
+## Third-party icon notice
+
+The Arrow Counterclockwise Dashes icon is from Microsoft Fluent UI System Icons (Regular, 24px), https://github.com/microsoft/fluentui-system-icons.
+
+MIT License
+
+Copyright (c) 2020 Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
