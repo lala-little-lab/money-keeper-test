@@ -727,3 +727,10 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 #mkCategoryDropdown .mk-category-item.is-selected{background:#fbeaf1;color:#9e5072}
 #mkCategoryDropdown .mk-category-item:active{background:#f8e2eb}
 #categoryBtn[aria-expanded="true"]{border-color:#d884a5;border-bottom-left-radius:5px;border-bottom-right-radius:5px}
+
+/* #63: keep four record types together with a smaller reset control */
+#record #modes{padding-right:35px;column-gap:4px;row-gap:6px;min-height:32px}
+#record #modes>.mode-choice{padding:8px 9px;font-size:13px;white-space:nowrap}
+#record #modes .mk-record-reset{width:30px;height:30px;top:3px;border-radius:9px}
+#record #modes .mk-record-reset svg{width:19px;height:19px}
+@media(max-width:390px){#record #modes{padding-right:32px;column-gap:3px}#record #modes>.mode-choice{padding:8px 7px;font-size:12px}#record #modes .mk-record-reset{width:28px;height:28px}}
