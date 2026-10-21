@@ -727,3 +727,12 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 #mkCategoryDropdown .mk-category-item.is-selected{background:#fbeaf1;color:#9e5072}
 #mkCategoryDropdown .mk-category-item:active{background:#f8e2eb}
 #categoryBtn[aria-expanded="true"]{border-color:#d884a5;border-bottom-left-radius:5px;border-bottom-right-radius:5px}
+
+/* #65: preserve the original four mode button sizes; use remaining space for a subtle clear action. */
+#record #modes{position:static;padding-right:0;min-height:0;display:flex;flex-wrap:nowrap;gap:5px;align-items:center}
+#record #modes .mode-choice{flex:0 0 auto;white-space:nowrap}
+#record #modes .mk-record-reset{position:static;inset:auto;margin-left:auto;flex:0 0 auto;width:auto;height:32px;padding:0 7px;border:1px solid #e5d5dd;border-radius:9px;background:#fff;color:#8d6d7b;font-size:11px;font-weight:400;line-height:1;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
+
+/* Keep all five actions in one line on compact mobile screens. */
+@media(max-width:380px){#record #modes{gap:3px}#record #modes .mk-record-reset{padding-left:4px;padding-right:4px}}
+@media(max-width:380px){#record #modes .mk-record-reset{padding-left:3px;padding-right:3px}}
