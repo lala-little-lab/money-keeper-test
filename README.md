@@ -1,3 +1,7 @@
+# Money Keeper テスト版 #68
+
+#61をベースに、カテゴリの重ね表示プルダウンと支払方法の選択枠線のみ変更。クリアボタンの位置・動作、上段とやりとりのボタン配置は#61のまま。カテゴリ選択に伴うページの自動スクロールは追加していません。
+
 # Money Keeper — Step2 IndexedDB test draft
 
 This is a **local test build**, not production-ready. Do not enter real personal financial data.
