@@ -74,3 +74,6 @@ Test deployment retry 2026-10-16
 - Event transaction category filter remains visible while collapsed; selecting expands.
 - Event editing replaces the original card inline, with compact edit and archive controls.
 - Generic special expense icon changed to 🌟; individual event names are untouched.
+
+
+#61: イベント名ボタンで特別費ON/OFF（右寄せ72%、ONピンク枠＋左バッジ、OFFグレー枠＋左バッジ）。支払方法の表示・内部状態を記録後も一致させて引き継ぎ、未選択の文字を細字化。記録画面にリセットアイコン追加（確認なし、タブ移動では入力保持、ONで固定の設定は維持）。

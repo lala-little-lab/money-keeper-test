@@ -699,3 +699,18 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-event-total-over{color:#c83b50;font-weight:800}
 /* #60: quiet compact edit action, same weight as other edit buttons. */
 .mk-event-topline .mk-event-small-action{font-weight:400!important}
+
+/* #61: event-name-only toggle, right aligned at ~70% width */
+.mk-event-name-row{display:flex;justify-content:flex-end;min-width:0}
+.mk-event-name-toggle{display:flex;align-items:center;gap:10px;width:72%;min-width:0;padding:9px 10px;border:1px solid #ded9dd;border-radius:10px;background:#fff;color:#292529;text-align:left}
+.mk-event-name-toggle.active{border-color:#d66c98;background:#fff}
+.mk-event-state{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:37px;padding:4px 8px;border-radius:999px;background:#e9e6e8;color:#6f686c;font-size:11px;font-weight:700}
+.mk-event-name-toggle.active .mk-event-state{background:#c76f94;color:#fff}
+.mk-event-name-text{font-size:13px;font-weight:700;min-width:0;overflow-wrap:anywhere}
+/* #61: inactive payment labels lighter weight, keep original selected palette */
+#payBtns .mini:not(.active),#otherPays .mini:not(.active){font-weight:400}
+#payBtns .mini.active,#otherPays .mini.active{font-weight:700}
+/* #61: compact record reset, kept away from main transaction tabs */
+#record .interaction-row{position:relative}
+#record .mk-record-reset{margin-left:auto;flex:none;width:37px;height:37px;display:grid;place-items:center;border:1px solid #e5d5dd;border-radius:11px;background:#fff;color:#8d6d7b;font-size:24px;font-weight:400;line-height:1}
+#record .interaction-row:has(.interaction-tabs:not(.hidden)) .mk-record-reset{order:5}
