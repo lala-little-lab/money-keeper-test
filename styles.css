@@ -728,17 +728,8 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 #mkCategoryDropdown .mk-category-item:active{background:#f8e2eb}
 #categoryBtn[aria-expanded="true"]{border-color:#d884a5;border-bottom-left-radius:5px;border-bottom-right-radius:5px}
 
-/* #63: keep four record types together with a smaller reset control */
-#record #modes{padding-right:35px;column-gap:4px;row-gap:6px;min-height:32px}
-#record #modes>.mode-choice{padding:8px 9px;font-size:13px;white-space:nowrap}
-#record #modes .mk-record-reset{width:30px;height:30px;top:3px;border-radius:9px}
-#record #modes .mk-record-reset svg{width:19px;height:19px}
-@media(max-width:390px){#record #modes{padding-right:32px;column-gap:3px}#record #modes>.mode-choice{padding:8px 7px;font-size:12px}#record #modes .mk-record-reset{width:28px;height:28px}}
-
-/* #64: Restore original mode-choice sizes. Reset is independent in the second row. */
-#record #modes{position:static;padding-right:0;min-height:0;column-gap:6px;row-gap:6px}
-#record #modes>.mode-choice{padding:9px 12px;font-size:14px;white-space:nowrap}
-#record .interaction-row{display:flex;align-items:center;gap:6px;min-height:40px}
-#record .interaction-row #recordResetBtn{position:static;order:99;margin-left:auto;width:37px;height:37px;flex:none;padding:0;border-radius:11px;display:flex;align-items:center;justify-content:center}
-#record .interaction-row #recordResetBtn svg{display:block;width:23px;height:23px;flex:none}
-@media(max-width:390px){#record #modes{padding-right:0;column-gap:6px}#record #modes>.mode-choice{padding:9px 12px;font-size:14px}#record .interaction-row #recordResetBtn{width:37px;height:37px}}
+/* #65 — based strictly on #62: independent reset, no tab compression */
+#record .mk-record-card{position:relative}
+#record #modes{padding-right:0;position:static}
+#record .mk-record-card > .mk-record-reset{position:absolute;right:16px;top:12px;width:40px;height:40px;display:grid;place-items:center;padding:0;margin:0;border:1px solid #e5d5dd;border-radius:11px;background:#fff;color:#8d6d7b;z-index:1}
+#record .mk-record-card > .mk-record-reset svg{display:block}
