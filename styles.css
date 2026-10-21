@@ -725,3 +725,6 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 #mkCategoryDropdown .mk-category-item.is-selected{background:#fbeaf1;color:#9e5072}
 #mkCategoryDropdown .mk-category-item:active{background:#f8e2eb}
 #categoryBtn[aria-expanded="true"]{border-color:#d884a5;border-bottom-left-radius:5px;border-bottom-right-radius:5px}
+
+/* #70: touch dragging is bounded only while the record category list is open. */
+#categoryBtn[aria-expanded="true"]{touch-action:none}
