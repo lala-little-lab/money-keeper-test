@@ -109,121 +109,12 @@ function mkChooseRakPaySource(k){rakutenPaySource=k;mkRefreshRakPaySource()}
 function mkRefreshRakPaySource(){const box=$('mkRakPaySource');if(!box)return;box.classList.toggle('hidden',!(mode==='expense'&&payment==='rakutenpay'));$('mkRakPayCard').classList.toggle('active',rakutenPaySource==='rakuten');$('mkRakPayBank').classList.toggle('active',rakutenPaySource==='rakbank');$('mkRakPayCash').classList.toggle('active',rakutenPaySource==='rakutencash')}
 function pickPay(k,b){payment=k;document.querySelectorAll('#payBtns .mini,#otherPays .mini').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('installmentField').classList.toggle('hidden',!['dcard','rakuten','epos','lumine'].includes(k));mkRefreshRakPaySource()}
 function pickInstallment(n,b){installments=n;document.querySelectorAll('#installmentField .mini').forEach(x=>x.classList.remove('active'));b.classList.add('active')}
-// #70: record-only category scrolling. Positions use the closed, compact form.
 let mkCategoryOpen=false;
-const mkCategoryScrollConfig={saveGap:24,topGap:8,listGap:8};
-let mkCategoryDrag=null,mkCategoryIgnoreClickUntil=0;
-let mkCategoryAutoUntil=0,mkCategoryAutoSpan=0;
-function mkCategoryViewport(){
- const v=window.visualViewport;
- const top=v?v.offsetTop:0,bottom=top+(v?v.height:window.innerHeight);
- const nav=document.querySelector('.bottom');
- return {top,bottom:nav?Math.min(bottom,nav.getBoundingClientRect().top):bottom};
-}
-function mkCategoryMaxScroll(){
- return Math.max(0,window.scrollY+$('categoryBtn').getBoundingClientRect().top-mkCategoryViewport().top-mkCategoryScrollConfig.topGap);
-}
-function mkCategoryScrollSpace(y){
- const record=$('record');let space=$('mkCategoryScrollSpace');
- if(!record.getClientRects().length){if(space)space.remove();return}
- if(!space){space=document.createElement('div');space.id='mkCategoryScrollSpace';space.setAttribute('aria-hidden','true');record.appendChild(space)}
- const naturalHeight=document.documentElement.scrollHeight-space.getBoundingClientRect().height;
- const needed=Math.max(0,Math.ceil(y+window.innerHeight-naturalHeight));
- space.style.height=needed+'px';
-}
-function mkCategoryScrollTo(y){
- const maxPage=Math.max(0,document.documentElement.scrollHeight-window.innerHeight);
- window.scrollTo({top:Math.max(0,Math.min(y,mkCategoryMaxScroll(),maxPage)),behavior:'instant'});
-}
-function mkCategoryAlignAutomatically(){
- const view=mkCategoryViewport();
- const target=Math.max(view.top+mkCategoryScrollConfig.topGap,view.bottom-mkCategoryScrollConfig.saveGap-mkCategoryAutoSpan);
- mkCategoryScrollTo(window.scrollY+$('categoryBtn').getBoundingClientRect().top-target);
-}
-function mkCategoryViewportChanged(){
- // Finish the initial alignment if closing the keyboard/browser chrome resizes
- // the viewport. Manual interaction immediately ends this brief opening phase.
- if(mkCategoryOpen&&performance.now()<mkCategoryAutoUntil)mkCategoryAlignAutomatically();
- mkPositionCategoryDropdown();
-}
-function mkCategoryCompactSpan(){
- // An inert, invisible copy measures both conditions without changing real inputs.
- // Include the payment section even for "相手が立替" to share the same target.
- const source=$('record'),copy=source.cloneNode(true);
- copy.setAttribute('aria-hidden','true');copy.inert=true;
- copy.classList.add('active');
- Object.assign(copy.style,{position:'fixed',left:'-10000px',top:'0',width:source.getBoundingClientRect().width+'px',visibility:'hidden',pointerEvents:'none'});
- copy.querySelector('#paymentField').classList.remove('hidden');
- // The current event banner is expense-only. Use its same date-based footprint
- // for advance modes too, without adding or changing the real event UI.
- const date=$('date').value,hits=eventsData.filter(e=>!e.archived&&e.start&&e.end&&date>=e.start&&date<=e.end);
- const eventBox=copy.querySelector('#mkEventSuggestion');
- eventBox.classList.toggle('hidden',!hits.length);
- eventBox.innerHTML=hits.map(e=>`<div class="mk-event-suggest-card"><div class="mk-event-suggest-top"><span>🌟特別費イベント期間中</span><button type="button" class="mk-event-fixed">ONで固定</button></div><div class="mk-event-name-row"><button type="button" class="mk-event-name-toggle"><span class="mk-event-state">OFF</span><span class="mk-event-name-text">${safeHtml(e.name)}</span></button></div></div>`).join('');
- ['optionalInner','otherPays','installmentField','mkRakPaySource','mkCategoryDropdown'].forEach(id=>copy.querySelector('#'+id).classList.add('hidden'));
- document.body.appendChild(copy);
- try{return copy.querySelector('.record-save').getBoundingClientRect().bottom-copy.querySelector('#categoryBtn').getBoundingClientRect().top}
- finally{copy.remove()}
-}
-function mkCloseCategoryDropdown(){
- const d=$('mkCategoryDropdown');if(!d)return;
- d.classList.add('hidden');mkCategoryOpen=false;mkCategoryDrag=null;mkCategoryAutoUntil=0;
- if($('mkCategoryScrollSpace'))mkCategoryScrollSpace(window.scrollY);
- const b=$('categoryBtn');b.setAttribute('aria-expanded','false');b.lastElementChild.textContent='›';
- // Keep the current page position; the open-only scroll limit is now released.
-}
-function mkPositionCategoryDropdown(){
- if(!mkCategoryOpen){if($('mkCategoryScrollSpace'))mkCategoryScrollSpace(window.scrollY);return}
- const b=$('categoryBtn'),d=$('mkCategoryDropdown');
- if(!b.getClientRects().length){mkCloseCategoryDropdown();return}
- mkCategoryScrollSpace(mkCategoryMaxScroll());
- const limit=mkCategoryMaxScroll();
- if(window.scrollY>limit+.5)mkCategoryScrollTo(limit);
- const r=b.getBoundingClientRect(),view=mkCategoryViewport(),top=r.bottom+2;
- d.style.left=r.left+'px';d.style.width=r.width+'px';d.style.top=top+'px';
- // Use the real navigation boundary, without a minimum that can cover the tabs.
- d.style.maxHeight=Math.max(0,view.bottom-top-mkCategoryScrollConfig.listGap)+'px';
-}
-function pickCategory(){
- if(performance.now()<mkCategoryIgnoreClickUntil)return;
- if(mkCategoryOpen){mkCloseCategoryDropdown();return}
- const b=$('categoryBtn'),d=$('mkCategoryDropdown');if(!b||!d)return;
- mkCategoryAutoSpan=mkCategoryCompactSpan();
- mkCategoryAutoUntil=performance.now()+600;
- if(document.activeElement&&document.activeElement.matches('input,textarea'))document.activeElement.blur();
- d.innerHTML='';
- cats.forEach(c=>{const item=document.createElement('button');item.type='button';item.className='mk-category-item'+(category===c?' is-selected':'');item.textContent=c;item.setAttribute('role','option');item.setAttribute('aria-selected',String(category===c));item.addEventListener('click',()=>{category=c;b.firstElementChild.textContent=c;mkCloseCategoryDropdown()});d.appendChild(item)});
- mkCategoryOpen=true;b.setAttribute('aria-expanded','true');b.lastElementChild.textContent='⌃';
- mkCategoryScrollSpace(mkCategoryMaxScroll());
- mkCategoryAlignAutomatically();
- d.classList.remove('hidden');d.scrollTop=0;mkPositionCategoryDropdown();
-}
-document.addEventListener('pointerdown',e=>{if(mkCategoryOpen){mkCategoryAutoUntil=0;if(!e.target.closest('#categoryField'))mkCloseCategoryDropdown()}});
-window.addEventListener('wheel',()=>{mkCategoryAutoUntil=0},{passive:true});
-// Control touch dragging on the category button so momentum cannot hide it.
-$('categoryBtn').addEventListener('pointerdown',e=>{
- if(!mkCategoryOpen||e.pointerType==='mouse'||!e.isPrimary)return;
- mkCategoryDrag={id:e.pointerId,lastY:e.clientY,startY:e.clientY,moved:false};
- e.currentTarget.setPointerCapture(e.pointerId);
-});
-$('categoryBtn').addEventListener('pointermove',e=>{
- const drag=mkCategoryDrag;if(!mkCategoryOpen||!drag||drag.id!==e.pointerId)return;
- if(Math.abs(e.clientY-drag.startY)>5)drag.moved=true;
- if(drag.moved){e.preventDefault();mkCategoryIgnoreClickUntil=performance.now()+500;mkCategoryScrollTo(window.scrollY+drag.lastY-e.clientY);mkPositionCategoryDropdown()}
- drag.lastY=e.clientY;
-});
-function mkEndCategoryDrag(e){
- if(!mkCategoryDrag||mkCategoryDrag.id!==e.pointerId)return;
- if(mkCategoryDrag.moved)mkCategoryIgnoreClickUntil=performance.now()+500;
- mkCategoryDrag=null;
-}
-$('categoryBtn').addEventListener('pointerup',mkEndCategoryDrag);
-$('categoryBtn').addEventListener('pointercancel',mkEndCategoryDrag);
-window.addEventListener('scroll',mkPositionCategoryDropdown,{passive:true});
-window.addEventListener('resize',mkCategoryViewportChanged);
-if(window.visualViewport){window.visualViewport.addEventListener('resize',mkCategoryViewportChanged);window.visualViewport.addEventListener('scroll',mkPositionCategoryDropdown);}
-
-
+function mkCloseCategoryDropdown(){const d=$('mkCategoryDropdown');if(!d)return;d.classList.add('hidden');mkCategoryOpen=false;const b=$('categoryBtn');b.setAttribute('aria-expanded','false');b.lastElementChild.textContent='›'}
+function mkPositionCategoryDropdown(){if(!mkCategoryOpen)return;const b=$('categoryBtn'),d=$('mkCategoryDropdown'),r=b.getBoundingClientRect();const top=Math.max(4,r.bottom+2);d.style.left=r.left+'px';d.style.width=r.width+'px';d.style.top=top+'px';d.style.maxHeight=Math.max(120,window.innerHeight-top-82)+'px'}
+function pickCategory(){if(mkCategoryOpen){mkCloseCategoryDropdown();return}const b=$('categoryBtn'),d=$('mkCategoryDropdown');if(!b||!d)return;d.innerHTML='';cats.forEach(c=>{const item=document.createElement('button');item.type='button';item.className='mk-category-item'+(category===c?' is-selected':'');item.textContent=c;item.setAttribute('role','option');item.setAttribute('aria-selected',String(category===c));item.addEventListener('click',()=>{category=c;b.firstElementChild.textContent=c;mkCloseCategoryDropdown()});d.appendChild(item)});mkCategoryOpen=true;b.setAttribute('aria-expanded','true');b.lastElementChild.textContent='⌃';const r=b.getBoundingClientRect();const target= Math.min(170,Math.max(100,window.innerHeight*.23));const shift=r.top-target;if(Math.abs(shift)>12)window.scrollBy({top:shift,behavior:'smooth'});d.classList.remove('hidden');mkPositionCategoryDropdown();setTimeout(mkPositionCategoryDropdown,320)}
+document.addEventListener('pointerdown',e=>{if(mkCategoryOpen&&!e.target.closest('#categoryField'))mkCloseCategoryDropdown()});
+window.addEventListener('scroll',()=>{if(mkCategoryOpen)mkPositionCategoryDropdown()},{passive:true});window.addEventListener('resize',mkPositionCategoryDropdown);
 
 function pickEvent(){openPicker('特別費イベント',[{label:'なし',value:''},...eventsData.filter(e=>!e.archived).map(e=>({label:e.name,value:e.name}))],(v,l)=>{mkSetEventTag(v);$('fxBox').classList.toggle('hidden',true)})}
 let mkEventFixed={};try{mkEventFixed=JSON.parse(localStorage.getItem('mk-event-fixed-59')||'{}')||{}}catch(_){}
