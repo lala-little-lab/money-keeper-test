@@ -112,19 +112,7 @@ function pickInstallment(n,b){installments=n;document.querySelectorAll('#install
 let mkCategoryOpen=false;
 function mkCloseCategoryDropdown(){const d=$('mkCategoryDropdown');if(!d)return;d.classList.add('hidden');mkCategoryOpen=false;const b=$('categoryBtn');b.setAttribute('aria-expanded','false');b.lastElementChild.textContent='›'}
 function mkPositionCategoryDropdown(){if(!mkCategoryOpen)return;const b=$('categoryBtn'),d=$('mkCategoryDropdown'),r=b.getBoundingClientRect();const top=Math.max(4,r.bottom+2);d.style.left=r.left+'px';d.style.width=r.width+'px';d.style.top=top+'px';d.style.maxHeight=Math.max(120,window.innerHeight-top-82)+'px'}
-// #65: after choosing a category, use the actual save button and fixed nav
-// positions. This naturally handles both normal and special-event layouts.
-function mkScrollRecordSaveIntoView(){
- const save=document.querySelector('#record .record-save');
- const nav=document.querySelector('.bottom');
- if(!save||!nav)return;
- const saveRect=save.getBoundingClientRect();
- const navTop=nav.getBoundingClientRect().top;
- const gap=12;
- const delta=saveRect.bottom-(navTop-gap);
- if(Math.abs(delta)>3)window.scrollBy({top:delta,behavior:'smooth'});
-}
-function pickCategory(){if(mkCategoryOpen){mkCloseCategoryDropdown();return}const b=$('categoryBtn'),d=$('mkCategoryDropdown');if(!b||!d)return;d.innerHTML='';cats.forEach(c=>{const item=document.createElement('button');item.type='button';item.className='mk-category-item'+(category===c?' is-selected':'');item.textContent=c;item.setAttribute('role','option');item.setAttribute('aria-selected',String(category===c));item.addEventListener('click',()=>{category=c;b.firstElementChild.textContent=c;mkCloseCategoryDropdown();requestAnimationFrame(()=>requestAnimationFrame(mkScrollRecordSaveIntoView))});d.appendChild(item)});mkCategoryOpen=true;b.setAttribute('aria-expanded','true');b.lastElementChild.textContent='⌃';const r=b.getBoundingClientRect();const target= Math.min(170,Math.max(100,window.innerHeight*.23));const shift=r.top-target;if(Math.abs(shift)>12)window.scrollBy({top:shift,behavior:'smooth'});d.classList.remove('hidden');mkPositionCategoryDropdown();setTimeout(mkPositionCategoryDropdown,320)}
+function pickCategory(){if(mkCategoryOpen){mkCloseCategoryDropdown();return}const b=$('categoryBtn'),d=$('mkCategoryDropdown');if(!b||!d)return;d.innerHTML='';cats.forEach(c=>{const item=document.createElement('button');item.type='button';item.className='mk-category-item'+(category===c?' is-selected':'');item.textContent=c;item.setAttribute('role','option');item.setAttribute('aria-selected',String(category===c));item.addEventListener('click',()=>{category=c;b.firstElementChild.textContent=c;mkCloseCategoryDropdown()});d.appendChild(item)});mkCategoryOpen=true;b.setAttribute('aria-expanded','true');b.lastElementChild.textContent='⌃';const r=b.getBoundingClientRect();const target= Math.min(170,Math.max(100,window.innerHeight*.23));const shift=r.top-target;if(Math.abs(shift)>12)window.scrollBy({top:shift,behavior:'smooth'});d.classList.remove('hidden');mkPositionCategoryDropdown();setTimeout(mkPositionCategoryDropdown,320)}
 document.addEventListener('pointerdown',e=>{if(mkCategoryOpen&&!e.target.closest('#categoryField'))mkCloseCategoryDropdown()});
 window.addEventListener('scroll',()=>{if(mkCategoryOpen)mkPositionCategoryDropdown()},{passive:true});window.addEventListener('resize',mkPositionCategoryDropdown);
 

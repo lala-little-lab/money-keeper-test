@@ -727,9 +727,3 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 #mkCategoryDropdown .mk-category-item.is-selected{background:#fbeaf1;color:#9e5072}
 #mkCategoryDropdown .mk-category-item:active{background:#f8e2eb}
 #categoryBtn[aria-expanded="true"]{border-color:#d884a5;border-bottom-left-radius:5px;border-bottom-right-radius:5px}
-
-/* #65 — based strictly on #62: independent reset, no tab compression */
-#record .mk-record-card{position:relative}
-#record #modes{padding-right:0;position:static}
-#record .mk-record-card > .mk-record-reset{position:absolute;right:16px;top:12px;width:40px;height:40px;display:grid;place-items:center;padding:0;margin:0;border:1px solid #e5d5dd;border-radius:11px;background:#fff;color:#8d6d7b;z-index:1}
-#record .mk-record-card > .mk-record-reset svg{display:block}
