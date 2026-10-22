@@ -687,3 +687,44 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-event-fixed{justify-self:end;font-size:10px;padding:4px 9px}
 .mk-event-switch{font-size:12px;padding:8px 7px}
 .mk-event-fixed.active,.mk-event-switch.active{background:#e78cab;color:white;border-color:#e78cab}
+
+/* #60: event budget entries — single right-aligned yen/value; no yen for unset. */
+.mk-event-budget-row .mk-event-money-field{justify-content:flex-end;border:1px solid #dedfe4;box-shadow:none!important;outline:none!important}
+.mk-event-budget-row .mk-event-money-field:focus-within{border-color:#c77c9b!important;box-shadow:none!important;outline:none!important}
+.mk-event-budget-row .mk-event-money-field input{width:100%;text-align:right!important;padding:8px 8px!important;border:0!important;border-radius:0!important;outline:none!important;box-shadow:none!important;background:transparent;font-size:12px}
+.mk-event-budget-row .mk-event-money-field input:focus{border:0!important;outline:none!important;box-shadow:none!important}
+.mk-event-budget-row .mk-event-money-field input::placeholder{color:#999;opacity:1}
+/* #60: total remainder is directly beneath progress meter, aligned right. */
+.mk-event-total-remaining{text-align:right;font-size:13px;color:#7b7074;margin-top:7px;white-space:nowrap}
+.mk-event-total-over{color:#c83b50;font-weight:800}
+/* #60: quiet compact edit action, same weight as other edit buttons. */
+.mk-event-topline .mk-event-small-action{font-weight:400!important}
+
+/* #61: event-name-only toggle, right aligned at ~70% width */
+.mk-event-name-row{display:flex;justify-content:flex-end;min-width:0}
+.mk-event-name-toggle{display:flex;align-items:center;gap:10px;width:72%;min-width:0;padding:9px 10px;border:1px solid #ded9dd;border-radius:10px;background:#fff;color:#292529;text-align:left}
+.mk-event-name-toggle.active{border-color:#d66c98;background:#fff}
+.mk-event-state{flex:none;display:inline-flex;align-items:center;justify-content:center;min-width:37px;padding:4px 8px;border-radius:999px;background:#e9e6e8;color:#6f686c;font-size:11px;font-weight:700}
+.mk-event-name-toggle.active .mk-event-state{background:#c76f94;color:#fff}
+.mk-event-name-text{font-size:13px;font-weight:700;min-width:0;overflow-wrap:anywhere}
+/* #61: inactive payment labels lighter weight, keep original selected palette */
+#payBtns .mini:not(.active),#otherPays .mini:not(.active){font-weight:400}
+#payBtns .mini.active,#otherPays .mini.active{font-weight:700}
+/* #61: compact record reset, kept away from main transaction tabs */
+#record .interaction-row{position:relative}
+#record .mk-record-reset{margin-left:auto;flex:none;width:37px;height:37px;display:grid;place-items:center;border:1px solid #e5d5dd;border-radius:11px;background:#fff;color:#8d6d7b;font-size:24px;font-weight:400;line-height:1}
+#record .interaction-row:has(.interaction-tabs:not(.hidden)) .mk-record-reset{order:5}
+
+/* #68: category overlay only; #61 mode/reset layout remains unchanged */
+#payBtns .mini.active,#otherPays .mini.active{border-width:1.6px}
+/* Category dropdown; no automatic page scrolling */
+
+#mkCategoryDropdown{position:fixed;z-index:85;overflow-y:auto;overscroll-behavior:contain;background:#fffdfd;border:1px solid #e4b7c9;border-radius:0 0 13px 13px;box-shadow:0 9px 22px rgba(60,30,45,.15);padding:4px 8px;scrollbar-width:thin}
+#mkCategoryDropdown .mk-category-item{display:block;width:100%;text-align:left;font-size:14px;font-weight:400;line-height:1.35;padding:8px 10px;background:transparent;border:0;border-bottom:1px solid #f0e9ed;border-radius:5px;color:#2c292a}
+#mkCategoryDropdown .mk-category-item:last-child{border-bottom:0}
+#mkCategoryDropdown .mk-category-item.is-selected{background:#fbeaf1;color:#9e5072}
+#mkCategoryDropdown .mk-category-item:active{background:#f8e2eb}
+#categoryBtn[aria-expanded="true"]{border-color:#d884a5;border-bottom-left-radius:5px;border-bottom-right-radius:5px}
+
+/* #70: touch dragging is bounded only while the record category list is open. */
+#categoryBtn[aria-expanded="true"]{touch-action:none}

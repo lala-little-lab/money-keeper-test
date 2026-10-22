@@ -1,3 +1,50 @@
+# Money Keeper テスト版 #75（2026-10-22）
+
+- #74を基準に、特別費イベント期間中の枠の対象へ「私が立替」「相手が立替」を追加。
+- 配置は既存の共通枠を使用し、いずれも任意項目のすぐ上。
+- 支出と同じON/OFF・ONで固定・任意項目内のイベント選択との連携処理を共用。固定設定も同じイベント単位の設定を使用。
+- 清算・貸し借りの4種類には枠を追加しない。案内メッセージ・メモ追記は今回実装しない。
+- 保存・集計・スクロール計算・HTML・CSSは#74から変更なし。相手が立替の期間中のスクロール高さ調整は次回相談。
+- 確認：50通りの画面種別・日付条件と、ON/OFF・任意項目との連携・固定設定の処理を自動確認。スマホ実機の表示確認は未実施。
+- 枠が表示されることでフォームの高さは増えます。スマホで表示・操作を確認してください。
+
+## #74の変更・確認記録
+
+- #73を基準に、③相手が立替で「選ばずに閉じた場合」も記録ボタンの位置へ滑らかに戻るよう変更。
+- カテゴリを選択／カテゴリ枠を再タップ／枠の外側をタップ、いずれも閉じたら戻る。
+- 開く高さはイベント期間に関係なく通常時。戻る位置は#73と同じ。
+- ①②のスクロール、レイアウト、編集画面などは変更なし。
+- ブラウザで3種類×イベント有無×3通りの閉じ方（18条件）を確認済み。スマホ実機で動きを確認してください。
+
+## #73の変更・確認記録
+
+- #72を基準に「相手が立替」のカテゴリスクロールだけを調整。
+- 支出・私が立替：通常時／イベント期間中の高さと選択後の位置維持は#72と同じ。
+- 相手が立替：イベント期間に関係なく、開くときは通常時の共通高さ。
+- 相手が立替でカテゴリを選んだ後だけ、実際の記録ボタン下端がタブの24px上に来る位置へ滑らかに戻る（ページ先頭が限界の場合はそこで停止）。
+- 選ばずに閉じた場合は戻さない。手動スクロール上限・リスト内スクロールは維持。
+- 任意項目が開いている場合も、その状態の記録ボタン位置を基準に戻す。すでにボタンが低い場合は逆方向に動かさない。
+- 戻りの途中でタップ／スワイプ／ホイール操作を始めた場合は自動移動を停止。
+- ブラウザ確認：3画面サイズ×3種類×イベント有無の18条件、③の滑らかな戻り・選択なしでの位置維持・途中停止・任意項目展開を確認。①②の測定結果は#72と一致。
+- 編集画面・ボタン配置・データ保存処理は変更なし。スマホ実機で確認してください。
+
+## #72の変更・確認記録
+
+- #70の到達位置・通常時とイベント期間中の計算を維持。
+- 自動移動を#62と同じブラウザ標準のsmoothに変更（上下両方向）。
+- 手動操作と上限処理は即時追従を維持。移動中に閉じる／操作する場合は、その位置で自動移動を停止。
+- 編集画面・クリアボタン・他の機能は変更なし。実機で動きを確認してください。
+- ブラウザ確認：3画面サイズ×3種類×イベント有無の18条件で到達位置・選択・位置保持を確認。各画面サイズで上下の滑らかな移動、移動途中の停止、手動スクロール上限も確認。
+- #71はユーザー側で#62を再確認した際のGitHubアップロード番号のため欠番。
+
+## #70の変更・確認記録
+
+#70：記録画面のカテゴリ展開時に自動スクロール。通常／イベント枠あり（OFFでも表示時は対象）で位置を調整。任意項目・もっと見る・分割回数・楽天Pay追加欄を閉じた標準状態を基準に、記録ボタン下端と固定タブの間に24pxを確保。立替2種類も、同じ日付の支出画面と同じカテゴリ位置。現行ではイベント枠自体は支出のみ表示ですが、立替でも期間に応じた高さを使用します。開いている間の手動スクロールはカテゴリ枠上端8pxまで。閉じた後は現在位置を保持し制限を解除。追加欄の開閉状態や入力内容は変更しません。小さい画面ではカテゴリ枠を画面内に残すことを優先します。ブラウザで3画面サイズ×3種類×期間有無の位置・選択・スクロール保持と、タッチ操作による上限／戻しを確認済み。実機確認待ち。
+
+## #69の変更
+
+#68を基準に、記録画面のクリアボタンのアイコンだけをFluent UI System Icons「Arrow Counterclockwise Dashes」Regularに変更。位置・サイズ・枠・背景・色（既存ボタン色を継承）・動作は維持。外部通信なしで表示するSVGをHTML内に含めています。
+
 # Money Keeper — Step2 IndexedDB test draft
 
 This is a **local test build**, not production-ready. Do not enter real personal financial data.
@@ -74,3 +121,32 @@ Test deployment retry 2026-10-16
 - Event transaction category filter remains visible while collapsed; selecting expands.
 - Event editing replaces the original card inline, with compact edit and archive controls.
 - Generic special expense icon changed to 🌟; individual event names are untouched.
+
+
+#61: イベント名ボタンで特別費ON/OFF（右寄せ72%、ONピンク枠＋左バッジ、OFFグレー枠＋左バッジ）。支払方法の表示・内部状態を記録後も一致させて引き継ぎ、未選択の文字を細字化。記録画面にリセットアイコン追加（確認なし、タブ移動では入力保持、ONで固定の設定は維持）。
+
+## Third-party icon notice
+
+The Arrow Counterclockwise Dashes icon is from Microsoft Fluent UI System Icons (Regular, 24px), https://github.com/microsoft/fluentui-system-icons.
+
+MIT License
+
+Copyright (c) 2020 Microsoft Corporation
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
