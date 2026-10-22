@@ -271,8 +271,8 @@ function mkRefreshMemoEventPicker(){
  const event=eventsData.find(e=>!e.archived&&e.id===mkEventMemoSelected);
  if(!event)mkEventMemoSelected='';
  $('mkEventMemoPicker').firstElementChild.textContent=event?event.name:'選んでください';
- const added=!!event&&(mkEventMemoParts.has(event.id)||$('memo').value.includes(event.name));
- const button=$('mkEventMemoAdd');button.textContent=added?'追加済み':'追加する';
+ const added=!!event&&mkEventMemoParts.has(event.id);
+ const button=$('mkEventMemoAdd');button.innerHTML='<span class="mk-event-state">'+(added?'ON':'OFF')+'</span><span>メモ</span>';button.setAttribute('aria-pressed',String(added));
  button.classList.toggle('active',added);button.disabled=!event;
 }
 function mkPickMemoEvent(){
@@ -283,8 +283,7 @@ function mkAddSelectedMemoEvent(){
  if(!mkEventMemoMode())return;
  const event=eventsData.find(e=>!e.archived&&e.id===mkEventMemoSelected);if(!event)return;
  mkSyncEventMemoParts();
- if(!mkEventMemoParts.has(event.id))mkToggleEventMemo(event.id,true);
- else mkRefreshMemoEventPicker();
+ mkToggleEventMemo(event.id,true);
 }
 function mkEventPeriodMatches(){const d=$('date').value;return d?eventsData.filter(e=>!e.archived&&e.start&&e.end&&d>=e.start&&d<=e.end):[]}
 function mkSyncEventMemoParts(){
