@@ -114,7 +114,8 @@ let mkCategoryOpen=false;
 const mkCategoryScrollConfig={saveGap:24,topGap:8,listGap:8};
 let mkCategoryDrag=null,mkCategoryIgnoreClickUntil=0;
 let mkCategoryAutoUntil=0,mkCategoryAutoSpan=0;
-let mkCategoryStopFrame=0,mkCategorySmoothTarget=null;
+let mkCategoryStopFrame=0,mkCategorySmoothTarget=null,mkCategoryReturning=false;
+function mkCategoryIsBorrowed(){return mode==='loan'&&loanKind==='borrowed'}
 function mkCategoryViewport(){
  const v=window.visualViewport;
  const top=v?v.offsetTop:0,bottom=top+(v?v.height:window.innerHeight);
@@ -159,8 +160,8 @@ function mkCategoryCompactSpan(){
  Object.assign(copy.style,{position:'fixed',left:'-10000px',top:'0',width:source.getBoundingClientRect().width+'px',visibility:'hidden',pointerEvents:'none'});
  copy.querySelector('#paymentField').classList.remove('hidden');
  // The current event banner is expense-only. Use its same date-based footprint
- // for advance modes too, without adding or changing the real event UI.
- const date=$('date').value,hits=eventsData.filter(e=>!e.archived&&e.start&&e.end&&date>=e.start&&date<=e.end);
+ // for 私が立替 too. 相手が立替 always uses the normal-period target.
+ const date=$('date').value,hits=mkCategoryIsBorrowed()?[]:eventsData.filter(e=>!e.archived&&e.start&&e.end&&date>=e.start&&date<=e.end);
  const eventBox=copy.querySelector('#mkEventSuggestion');
  eventBox.classList.toggle('hidden',!hits.length);
  eventBox.innerHTML=hits.map(e=>`<div class="mk-event-suggest-card"><div class="mk-event-suggest-top"><span>🌟特別費イベント期間中</span><button type="button" class="mk-event-fixed">ONで固定</button></div><div class="mk-event-name-row"><button type="button" class="mk-event-name-toggle"><span class="mk-event-state">OFF</span><span class="mk-event-name-text">${safeHtml(e.name)}</span></button></div></div>`).join('');
@@ -171,6 +172,7 @@ function mkCategoryCompactSpan(){
 }
 // #72: stop native smooth motion at the current position on close or manual input.
 function mkStopCategoryAutoScroll(){
+ mkCategoryReturning=false;
  mkCategoryAutoUntil=0;
  cancelAnimationFrame(mkCategoryStopFrame);
  const y=window.scrollY;
@@ -181,16 +183,26 @@ function mkStopCategoryAutoScroll(){
  // Cancel a compositor frame that may already be queued by native smooth scrolling.
  mkCategoryStopFrame=requestAnimationFrame(()=>window.scrollTo({top:y,behavior:'instant'}));
 }
-function mkCloseCategoryDropdown(){
+function mkCloseCategoryDropdown(returnToSave=false){
+ const wasOpen=mkCategoryOpen;
  const d=$('mkCategoryDropdown');if(!d)return;
- if(mkCategoryOpen)mkStopCategoryAutoScroll();
+ if(mkCategoryOpen||mkCategoryReturning)mkStopCategoryAutoScroll();
  d.classList.add('hidden');mkCategoryOpen=false;mkCategoryDrag=null;mkCategoryAutoUntil=0;
  if($('mkCategoryScrollSpace'))mkCategoryScrollSpace(window.scrollY);
  const b=$('categoryBtn');b.setAttribute('aria-expanded','false');b.lastElementChild.textContent='›';
- // Keep the current page position; the open-only scroll limit is now released.
+ // #74: every user dismissal returns 相手が立替 to its save-button position.
+ if(wasOpen&&returnToSave)mkCategoryReturnToSave();
+}
+// 相手が立替 returns the save button near the tabs when the dropdown closes.
+function mkCategoryReturnToSave(){
+ if(!mkCategoryIsBorrowed())return;
+ const save=document.querySelector('#record .record-save');
+ const target=Math.max(0,Math.min(window.scrollY,window.scrollY+save.getBoundingClientRect().bottom-mkCategoryViewport().bottom+mkCategoryScrollConfig.saveGap));
+ mkCategoryReturning=window.scrollY-target>1;
+ mkCategoryScrollTo(target,'smooth');
 }
 function mkPositionCategoryDropdown(){
- if(!mkCategoryOpen){if($('mkCategoryScrollSpace'))mkCategoryScrollSpace(window.scrollY);return}
+ if(!mkCategoryOpen){if(mkCategoryReturning&&Math.abs(window.scrollY-mkCategorySmoothTarget)<=1)mkCategoryReturning=false;if($('mkCategoryScrollSpace'))mkCategoryScrollSpace(window.scrollY);return}
  const b=$('categoryBtn'),d=$('mkCategoryDropdown');
  if(!b.getClientRects().length){mkCloseCategoryDropdown();return}
  mkCategoryScrollSpace(mkCategoryMaxScroll());
@@ -203,20 +215,20 @@ function mkPositionCategoryDropdown(){
 }
 function pickCategory(){
  if(performance.now()<mkCategoryIgnoreClickUntil)return;
- if(mkCategoryOpen){mkCloseCategoryDropdown();return}
+ if(mkCategoryOpen){mkCloseCategoryDropdown(true);return}
  const b=$('categoryBtn'),d=$('mkCategoryDropdown');if(!b||!d)return;
  mkCategoryAutoSpan=mkCategoryCompactSpan();
  mkCategoryAutoUntil=performance.now()+600;
  if(document.activeElement&&document.activeElement.matches('input,textarea'))document.activeElement.blur();
  d.innerHTML='';
- cats.forEach(c=>{const item=document.createElement('button');item.type='button';item.className='mk-category-item'+(category===c?' is-selected':'');item.textContent=c;item.setAttribute('role','option');item.setAttribute('aria-selected',String(category===c));item.addEventListener('click',()=>{category=c;b.firstElementChild.textContent=c;mkCloseCategoryDropdown()});d.appendChild(item)});
+ cats.forEach(c=>{const item=document.createElement('button');item.type='button';item.className='mk-category-item'+(category===c?' is-selected':'');item.textContent=c;item.setAttribute('role','option');item.setAttribute('aria-selected',String(category===c));item.addEventListener('click',()=>{category=c;b.firstElementChild.textContent=c;mkCloseCategoryDropdown(true)});d.appendChild(item)});
  mkCategoryOpen=true;b.setAttribute('aria-expanded','true');b.lastElementChild.textContent='⌃';
  mkCategoryScrollSpace(mkCategoryMaxScroll());
  mkCategoryAlignAutomatically();
  d.classList.remove('hidden');d.scrollTop=0;mkPositionCategoryDropdown();
 }
-document.addEventListener('pointerdown',e=>{if(mkCategoryOpen){mkStopCategoryAutoScroll();if(!e.target.closest('#categoryField'))mkCloseCategoryDropdown()}});
-window.addEventListener('wheel',()=>{if(mkCategoryOpen)mkStopCategoryAutoScroll()},{passive:true});
+document.addEventListener('pointerdown',e=>{if(mkCategoryReturning)mkStopCategoryAutoScroll();if(mkCategoryOpen){mkStopCategoryAutoScroll();if(!e.target.closest('#categoryField'))mkCloseCategoryDropdown(true)}});
+window.addEventListener('wheel',()=>{if(mkCategoryOpen||mkCategoryReturning)mkStopCategoryAutoScroll()},{passive:true});
 // Control touch dragging on the category button so momentum cannot hide it.
 $('categoryBtn').addEventListener('pointerdown',e=>{
  if(!mkCategoryOpen||e.pointerType==='mouse'||!e.isPrimary)return;
