@@ -728,3 +728,9 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 
 /* #70: touch dragging is bounded only while the record category list is open. */
 #categoryBtn[aria-expanded="true"]{touch-action:none}
+
+/* #76: memo-only event card, same toggle height and right alignment. */
+.mk-event-memo-card .mk-event-suggest-top{grid-template-columns:minmax(0,1fr)}
+.mk-event-memo-note{font-size:11px;color:#766773;line-height:1.45;margin-bottom:6px}
+.mk-event-name-toggle.mk-event-memo-toggle{width:max-content;min-width:72%;max-width:100%;flex-shrink:1;box-sizing:border-box}
+.mk-event-memo-toggle .mk-event-name-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
