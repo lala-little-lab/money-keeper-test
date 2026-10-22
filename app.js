@@ -259,7 +259,33 @@ let mkEventFixed={};try{mkEventFixed=JSON.parse(localStorage.getItem('mk-event-f
 // #76: memo-only event controls never assign eventTag or affect event totals.
 const mkEventMemoParts=new Map();
 let mkEventMemoPrevious='';
+let mkEventMemoSelected='';
 function mkEventMemoMode(){return mode==='loan'&&['repay','receive','loanLend','loanBorrow'].includes(loanKind)}
+// #77: a separate memo picker, unaffected by the special-expense default.
+function mkRefreshMemoEventPicker(){
+ const field=$('mkEventMemoField');if(!field)return;
+ const enabled=mkEventMemoMode();field.classList.toggle('hidden',!enabled);
+ $('mkEventTagField').classList.toggle('hidden',enabled);
+ if(!enabled)return;
+ mkSyncEventMemoParts();
+ const event=eventsData.find(e=>!e.archived&&e.id===mkEventMemoSelected);
+ if(!event)mkEventMemoSelected='';
+ $('mkEventMemoPicker').firstElementChild.textContent=event?event.name:'選んでください';
+ const added=!!event&&(mkEventMemoParts.has(event.id)||$('memo').value.includes(event.name));
+ const button=$('mkEventMemoAdd');button.textContent=added?'追加済み':'追加する';
+ button.classList.toggle('active',added);button.disabled=!event;
+}
+function mkPickMemoEvent(){
+ if(!mkEventMemoMode())return;
+ openPicker('特別費イベント（メモ用）',[{label:'選んでください',value:''},...eventsData.filter(e=>!e.archived).map(e=>({label:e.name,value:e.id}))],id=>{mkEventMemoSelected=id;mkRefreshMemoEventPicker()});
+}
+function mkAddSelectedMemoEvent(){
+ if(!mkEventMemoMode())return;
+ const event=eventsData.find(e=>!e.archived&&e.id===mkEventMemoSelected);if(!event)return;
+ mkSyncEventMemoParts();
+ if(!mkEventMemoParts.has(event.id))mkToggleEventMemo(event.id,true);
+ else mkRefreshMemoEventPicker();
+}
 function mkEventPeriodMatches(){const d=$('date').value;return d?eventsData.filter(e=>!e.archived&&e.start&&e.end&&d>=e.start&&d<=e.end):[]}
 function mkSyncEventMemoParts(){
  const value=$('memo').value,old=mkEventMemoPrevious;
@@ -275,9 +301,9 @@ function mkSyncEventMemoParts(){
  }
  mkEventMemoPrevious=value;
 }
-function mkToggleEventMemo(id){
+function mkToggleEventMemo(id,fromPicker=false){
  if(!mkEventMemoMode())return;
- const event=mkEventPeriodMatches().find(e=>e.id===id);if(!event)return;
+ const event=(fromPicker?eventsData.filter(e=>!e.archived):mkEventPeriodMatches()).find(e=>e.id===id);if(!event)return;
  mkSyncEventMemoParts();
  const memo=$('memo'),part=mkEventMemoParts.get(id);
  if(part){
@@ -307,7 +333,7 @@ function mkEventMatches(){const d=$('date').value;return (mode==='expense'||(mod
 function mkSetEventTag(name){eventTag=name;$('eventBtn').firstElementChild.textContent=name||'なし';mkRenderEventSuggestion()}
 function mkToggleSuggestedEvent(id){const e=eventsData.find(x=>x.id===id);if(e)mkSetEventTag(eventTag===e.name?'':e.name)}
 function mkToggleEventFixed(id){mkEventFixed[id]=!mkEventFixed[id];try{localStorage.setItem('mk-event-fixed-59',JSON.stringify(mkEventFixed))}catch(_){}mkRenderEventSuggestion()}
-function mkRenderEventSuggestion(){const box=$('mkEventSuggestion');if(!box)return;if(mkEventMemoMode()){mkRenderEventMemo(box);return}const hits=mkEventMatches();if(!hits.length){box.classList.add('hidden');return}box.classList.remove('hidden');box.innerHTML=hits.map(e=>{const on=eventTag===e.name;return `<div class="mk-event-suggest-card"><div class="mk-event-suggest-top"><span>🌟特別費イベント期間中</span><button type="button" class="mk-event-fixed ${mkEventFixed[e.id]?'active':''}" onclick="mkToggleEventFixed('${e.id}')" aria-pressed="${!!mkEventFixed[e.id]}">ONで固定</button></div><div class="mk-event-name-row"><button type="button" class="mk-event-name-toggle ${on?'active':''}" onclick="mkToggleSuggestedEvent('${e.id}')" aria-pressed="${on}"><span class="mk-event-state">${on?'ON':'OFF'}</span><span class="mk-event-name-text">${safeHtml(e.name)}</span></button></div></div>`}).join('')}
+function mkRenderEventSuggestion(){mkRefreshMemoEventPicker();const box=$('mkEventSuggestion');if(!box)return;if(mkEventMemoMode()){mkRenderEventMemo(box);return}const hits=mkEventMatches();if(!hits.length){box.classList.add('hidden');return}box.classList.remove('hidden');box.innerHTML=hits.map(e=>{const on=eventTag===e.name;return `<div class="mk-event-suggest-card"><div class="mk-event-suggest-top"><span>🌟特別費イベント期間中</span><button type="button" class="mk-event-fixed ${mkEventFixed[e.id]?'active':''}" onclick="mkToggleEventFixed('${e.id}')" aria-pressed="${!!mkEventFixed[e.id]}">ONで固定</button></div><div class="mk-event-name-row"><button type="button" class="mk-event-name-toggle ${on?'active':''}" onclick="mkToggleSuggestedEvent('${e.id}')" aria-pressed="${on}"><span class="mk-event-state">${on?'ON':'OFF'}</span><span class="mk-event-name-text">${safeHtml(e.name)}</span></button></div></div>`}).join('')}
 
 function autoTagEvent(){const hits=mkEventMatches();if(eventTag&&!hits.some(e=>e.name===eventTag))mkSetEventTag('');else mkRenderEventSuggestion()}
 function mkDefaultEventTag(){const fixed=mkEventMatches().find(e=>mkEventFixed[e.id]);mkSetEventTag(fixed?fixed.name:'')}
@@ -325,7 +351,7 @@ function setTransferFeeSide(side,b){transferFeeSide=side;document.querySelectorA
 function toggleTransferFeePayer(){let fee=moneyNum($('transferFee').value);$('transferFeePayer').classList.toggle('hidden',fee<=0)}
 function saveRecord(){let d=$('date').value,a=moneyNum($('amount').value),memo=$('memo').value.trim(),pts=Number($('points').value||0),dc=disc(),txid='tx'+Date.now()+Math.random().toString(36).slice(2,7);$('recordError').textContent='';if(mode==='expense'){if(a<=0||!category||!payment)return err('金額・カテゴリ・支払方法を確認してね');let fee=moneyNum($('recordFee').value);if(fee<0)return err('手数料は0円以上にしてね');let paid=Math.max(0,a-pts),billed=Math.round(paid*(1-dc/100))+fee;if(payment==='rakutenpay'&&rakutenPaySource==='rakutencash'&&balances.rakutencash.v<paid+fee)return err('楽天Pay残高が不足しています。ホームの「残高を合わせる」で残高を確認してね');let t={id:txid,date:d,type:'expense',amount:a,paid,billed,fee,category,payment,memo,points:pts,discount:dc,eventTag,installments, ...(payment==='rakutenpay'?{rakutenPaySource}: {})};txs.unshift(t);const payAccount=payment==='rakutenpay'?rakutenPaySource:payment;if(acct(payAccount))move(d,category+(memo?'・'+memo:''),-(paid+fee),payAccount,txid)}else if(mode==='income'){if(a<=0||!payment)return err('入金額と入金先を確認してね');let t={id:txid,date:d,type:'income',amount:a,payment,memo};txs.unshift(t);if(acct(payment))move(d,'入金'+(memo?'・'+memo:''),a,payment,txid)}else if(mode==='transfer'){let fee=moneyNum($('transferFee').value),feeSide=fee>0?transferFeeSide:'from';if(a<=0||!from||!to||from===to||fee<0)return err('金額・移動元・移動先・手数料を確認してね');if(fee>0&&feeSide==='to'&&a<=fee)return err('移動先から手数料を引く場合は、移動金額より小さい手数料にしてね');let t={id:txid,date:d,type:'transfer',amount:a,fee,feeSide,from,to};txs.unshift(t);if(feeSide==='to'){balances[from].v-=a;balances[to].v+=a-fee}else{balances[from].v-=a+fee;balances[to].v+=a}if(fee>0)cashbook.unshift({date:d,text:'振込手数料',delta:-fee,refId:txid})}else if(mode==='charge'){if(a<=0||!chargeTarget||!chargeSource)return err('金額・チャージ先・チャージ元を確認してね');let t={id:txid,date:d,type:'charge',amount:a,target:chargeTarget,source:chargeSource,billed:Math.round(a*(1-dc/100)),discount:dc};txs.unshift(t);balances[chargeTarget].v+=a;if(acct(chargeSource)){balances[chargeSource].v-=a}else{cashbook.unshift({date:d,text:(pays.find(x=>x[0]===chargeSource)||['',chargeSource])[1]+'→'+balances[chargeTarget].name+'チャージ',delta:a,refId:txid})}}else if(mode==='loan'){if(loanKind==='lend'){let g=moneyNum($('gross').value),m=moneyNum($('mine').value),t=moneyNum($('theirs').value),p=$('lendPerson').value.trim();if(g<=0||t<=0||Math.round(m+t)!==Math.round(g)||!p||!category||!payment)return err('立替の入力を確認してね');lastSavedLoanPerson=p;let tx={id:txid,date:d,type:'lend',amount:m,gross:g,category,payment,person:p,other:t,memo,eventTag};txs.unshift(tx);if(acct(payment))move(d,category+'（'+p+'分を立替）',-g,payment,txid)}else{let p=$('person').value.trim();if(a<=0||!p)return err('金額と相手を確認してね');lastSavedLoanPerson=p;let fee=['repay','receive'].includes(loanKind)?moneyNum($('recordFee').value):0;if(fee<0)return err('手数料は0円以上にしてね');if(loanKind==='borrowed'){if(!category)return err('カテゴリを選んでね');txs.unshift({id:txid,date:d,type:'borrowed',amount:a,category,person:p,memo,eventTag})}else{if(!payment)return err('支払・受取方法を選んでね');let tx={id:txid,date:d,type:loanKind,amount:a,fee,person:p,payment,memo};txs.unshift(tx);if(acct(payment)){if(loanKind==='repay')move(d,p+'へ返済',-(a+fee),payment,txid);if(loanKind==='receive')move(d,p+'から返済',a-fee,payment,txid);if(loanKind==='loanBorrow')move(d,p+'から借入',a,payment,txid);if(loanKind==='loanLend')move(d,p+'へ貸付',-a,payment,txid)}}}}if(mode==='loan')reviveArchivedLoanPersonOnNewRecord(lastSavedLoanPerson);renderAll();$('goLoansBtn').classList.toggle('hidden',mode!=='loan');$('savedModal').classList.remove('hidden')}
 function err(s){$('recordError').textContent=s}function continueRecord(){$('savedModal').classList.add('hidden');clearFields();scrollTo(0,0)}function goHistory(){$('savedModal').classList.add('hidden');clearFields();nav('history',document.querySelectorAll('.nav')[2])}function goLoans(){$('savedModal').classList.add('hidden');if(lastSavedLoanPerson){loanActivePerson=lastSavedLoanPerson;loanExpandedPerson=lastSavedLoanPerson}loanArchiveView=false;loanOrganize=false;loanAddToGroupId='';loanSelectedIds.clear();clearFields();openOther('loans');renderLoans()}function resetRecordForm(){mkCloseCategoryDropdown();clearFields(false);$('date').value=new Date().toLocaleDateString('sv-SE');from='';to='';chargeTarget='';chargeSource='';installments=1;discount=0;transferFeeSide='from';$('fromBtn').firstElementChild.textContent='選んでください';$('toBtn').firstElementChild.textContent='選んでください';document.querySelectorAll('#installmentField .mini').forEach((b,i)=>b.classList.toggle('active',i===0));document.querySelectorAll('#discountBtns .mini').forEach((b,i)=>b.classList.toggle('active',i===0));if($('customDiscount'))$('customDiscount').classList.add('hidden');if($('fxText'))$('fxText').textContent='';if($('transferFeePayer'))$('transferFeePayer').classList.add('hidden');updateForm();if(typeof renderCharge==='function')renderCharge();mkDefaultEventTag()}
-function clearFields(keepPayment=true){mkEventMemoParts.clear();mkEventMemoPrevious='';const previousPayment=payment;['amount','gross','mine','theirs','lendPerson','person','memo','points','customDiscount','nzd','transferFee','recordFee'].forEach(id=>{if($(id))$(id).value=''});category='';eventTag='';payment=keepPayment?previousPayment:'';rakutenPaySource='rakuten';mkRefreshRakPaySource();$('categoryBtn').firstElementChild.textContent='選んでください';$('eventBtn').firstElementChild.textContent='なし';$('optionalInner').classList.add('hidden');if($('optionalMark'))$('optionalMark').textContent='＋';$('otherPays').classList.add('hidden');$('fxBox').classList.add('hidden');mkDefaultEventTag();renderPayBtns();$('installmentField').classList.toggle('hidden',!['dcard','rakuten','epos','lumine'].includes(payment));$('recordError').textContent=''}
+function clearFields(keepPayment=true){mkEventMemoSelected='';mkEventMemoParts.clear();mkEventMemoPrevious='';const previousPayment=payment;['amount','gross','mine','theirs','lendPerson','person','memo','points','customDiscount','nzd','transferFee','recordFee'].forEach(id=>{if($(id))$(id).value=''});category='';eventTag='';payment=keepPayment?previousPayment:'';rakutenPaySource='rakuten';mkRefreshRakPaySource();$('categoryBtn').firstElementChild.textContent='選んでください';$('eventBtn').firstElementChild.textContent='なし';$('optionalInner').classList.add('hidden');if($('optionalMark'))$('optionalMark').textContent='＋';$('otherPays').classList.add('hidden');$('fxBox').classList.add('hidden');mkDefaultEventTag();renderPayBtns();$('installmentField').classList.toggle('hidden',!['dcard','rakuten','epos','lumine'].includes(payment));$('recordError').textContent=''}
 function isLoanExtra(t){return t.type==='loanExtraLend'||t.type==='loanExtraBorrow'}
 function typeGroup(t){return ['lend','borrowed','repay','receive','loanBorrow','loanLend','loanExtraLend','loanExtraBorrow','loanAdjustment'].includes(t.type)?'loan':t.type}
 function txAmount(t){return t.type==='lend'?Number(t.gross||0):Number(t.amount||0)}
