@@ -38,6 +38,7 @@
         if (!item || typeof item !== 'object' || Array.isArray(item)) throw Error(key + ' の内容が正しくありません。');
       }
     }
+    if(data.mkMemoData!==undefined)mkMemoValidate(data.mkMemoData);
     return data;
   }
 
