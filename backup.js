@@ -86,7 +86,7 @@
       const payload = JSON.parse(await file.text());
       if (payload?.format !== FORMAT || payload.backupVersion !== 1) throw Error('Money Keeperの対応バックアップではありません。');
       if (payload.schemaVersion !== MKMigrations.currentVersion) throw Error('このバージョンのバックアップには対応していません。');
-      const data = validate(payload.data);
+      const data = MKMigrations.renameCategories(validate(payload.data));
       const answer = confirm(
         '【テスト版】現在のデータをバックアップ内容で全て置き換えます。\n\n' +
         'バックアップ日時：' + (payload.exportedAt || '不明') + '\n' +

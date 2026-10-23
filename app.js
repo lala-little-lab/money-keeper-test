@@ -36,7 +36,7 @@ function openMoneyPrompt(title,current,cb,opt={}){
 function closeMoneyPrompt(){$('moneyPromptModal').classList.add('hidden');moneyPromptSave=null}
 function saveMoneyPrompt(){let input=$('moneyPromptValue');const raw=input.value,n=raw.trim()?moneyNum(raw):(moneyPromptAllowBlank?0:NaN);if(!Number.isSafeInteger(n)||n<moneyPromptMin){$('moneyPromptError').textContent='金額を確認してね';return}const cb=moneyPromptSave;closeMoneyPrompt();if(cb)cb(n)}
 
-const cats=['食材','コンビニ','カフェ・外食','美容','化粧品・ボディケア・ネイル','服・靴・バッグ・アクセサリー','日用品','雑貨','医療','プロテイン・サプリ','トレーニング','交通・ガソリン','家族','推し活','宿泊','交際費','娯楽','手数料','その他'];
+const cats=['食材','コンビニ','カフェ・外食','美容','化粧品・ケア品','服・靴・小物','日用品','雑貨','医療','プロテイン・サプリ','トレーニング','交通・ガソリン','家族','推し活','宿泊','交際費','娯楽','手数料','その他'];
 const pays=[['cash','現金'],['paypay','PayPay'],['dpay','d払い'],['dcard','dカード'],['id','iD'],['rakuten','楽天カード'],['lumine','ルミネカード'],['epos','エポスカード'],['starbucks','Starbucks'],['suica','Suica'],['seibu','西武信用金庫'],['smbc','三井住友銀行'],['rakbank','楽天銀行'],['yucho','ゆうちょ'],['rakutenpay','楽天Pay'],['edy','楽天Edy'],['paypal','PayPal'],['other','その他']];
 const incomePays=[['seibu','西武信金'],['smbc','三井住友'],['rakbank','楽天銀行'],['yucho','ゆうちょ'],['cash','現金'],['paypay','PayPay'],['suica','Suica'],['starbucks','Starbucks'],['other','その他']];
 const balances={seibu:{name:'西武信用金庫',v:0},rakbank:{name:'楽天銀行',v:0},smbc:{name:'三井住友銀行',v:0},yucho:{name:'ゆうちょ',v:0},cash:{name:'現金',v:0},paypay:{name:'PayPay',v:0},suica:{name:'Suica',v:0},starbucks:{name:'Starbucks',v:0},rakutencash:{name:'楽天Pay残高',v:0}};
@@ -76,6 +76,8 @@ function nav(id,b){
  mkDisplayPage(id,b);
 }
 window.addEventListener('popstate',function(event){
+ if(event.state?.memo){mkMemoHide();mkMemoView=event.state.memo.view||'words';mkMemoScope=event.state.memo.scope||'';if(mkMemoView==='groups'&&mkMemoScope&&!mkMemoData.groups.some(g=>g.id===mkMemoScope))mkMemoScope='';mkMemoRender();mkDisplayPage('memoManager',mkNavigationButton('memoManager'));if(event.state.memo.modal)mkMemoHistory(true);return;}
+ if(document.querySelector('.page.active')?.id==='memoManager')mkMemoHide();
  const id=event.state&&event.state.mkPage;
  if(!id||!$(id)||!$(id).classList.contains('page'))return;
  // Do not silently discard a modal's draft on Back. Close it explicitly.
@@ -917,7 +919,7 @@ function renderAll(){mkRenderEventSuggestion();renderTodos();renderBalances();re
 // Only persisted business data; temporary form/navigation state stays ephemeral.
 // #79 Memo vocabulary management. No record-entry integration in this version.
 let mkMemoData={groups:[],words:[]};
-let mkMemoView='groups',mkMemoScope='',mkMemoEdit=null,mkMemoDuplicate='',mkMemoDrag=null;
+let mkMemoView='words',mkMemoScope='',mkMemoEdit=null,mkMemoDuplicate='',mkMemoDrag=null;
 function mkMemoValidate(data){
  if(!data||!Array.isArray(data.groups)||!Array.isArray(data.words))throw Error('メモリストの形式が正しくありません。');
  const ids=new Set(),names=new Set();
@@ -927,39 +929,48 @@ function mkMemoValidate(data){
  return data;
 }
 function mkMemoId(){return 'memo-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)}
-function mkMemoOpen(){mkMemoScope='';mkMemoView='groups';mkMemoRender();openOther('memoManager')}
-function mkMemoTab(view){mkMemoView=view;mkMemoScope='';mkMemoRender()}
-function mkMemoEnter(index){mkMemoScope=mkMemoView==='groups'?mkMemoData.groups[index].id:cats[index];mkMemoRender()}
-function mkMemoRows(){return mkMemoScope?mkMemoData.words.filter(w=>mkMemoView==='groups'?w.group===mkMemoScope:w.cats.includes(mkMemoScope)):mkMemoData.groups}
+function mkMemoHistory(replace=false){const state={mkPage:'memoManager',memo:{view:mkMemoView,scope:mkMemoScope,modal:!!mkMemoEdit}};history[replace?'replaceState':'pushState'](state,'',location.href)}
+function mkMemoOpen(){mkMemoScope='';mkMemoView='words';mkMemoRender();openOther('memoManager');mkMemoHistory(true)}
+function mkMemoTab(view){if(view===mkMemoView&&!mkMemoScope)return;if(view==='words'){if(mkMemoView!=='words')history.go(mkMemoScope?-2:-1);return}const replace=mkMemoView!=='words'&&!mkMemoScope;mkMemoView=view;mkMemoScope='';mkMemoRender();mkMemoHistory(replace)}
+function mkMemoEnter(index){mkMemoScope=mkMemoView==='groups'?mkMemoData.groups[index].id:cats[index];mkMemoRender();mkMemoHistory()}
+function mkMemoRows(){return mkMemoScope?mkMemoData.words.filter(w=>mkMemoView==='groups'?w.group===mkMemoScope:w.cats.includes(mkMemoScope)):mkMemoView==='words'?[...mkMemoData.words]:[...mkMemoData.groups]}
 function mkMemoPersist(){mkQueueSave();mkMemoRender()}
 function mkMemoRender(){
  if(!$('mkMemoRows'))return;
- const scoped=!!mkMemoScope,group=mkMemoData.groups.find(g=>g.id===mkMemoScope);
- $('mkMemoHeading').textContent=scoped?(mkMemoView==='groups'?group?.name||'分類':mkMemoScope):'🎀 メモ';
+ const scoped=!!mkMemoScope,wordRows=scoped||mkMemoView==='words',group=mkMemoData.groups.find(g=>g.id===mkMemoScope);
+ $('mkMemoHeading').textContent=scoped?(mkMemoView==='groups'?'分類：'+(group?.name||''):'カテゴリ：'+mkMemoScope):'🎀 メモ';
  $('mkMemoTabs').hidden=scoped;
- $('mkMemoBack').textContent=scoped?'← 一覧へ':'← その他へ';
+ $('mkMemoBack').textContent=scoped?'← 一覧へ':mkMemoView==='words'?'← その他へ':'← 言葉一覧へ';
  $('mkMemoAdd').hidden=!scoped&&mkMemoView==='cats';
- $('mkMemoAdd').textContent=scoped?'＋言葉':'＋分類';
- $('mkMemoListLabel').textContent=scoped?'言葉':mkMemoView==='groups'?'分類':'カテゴリ';
+ $('mkMemoAdd').textContent='追加';
+ $('mkMemoListLabel').textContent=wordRows?'言葉':mkMemoView==='groups'?'分類':'カテゴリ';
  document.querySelectorAll('#mkMemoTabs button').forEach(b=>b.classList.toggle('active',b.dataset.view===mkMemoView));
  const rows=$('mkMemoRows');rows.innerHTML='';
  const list=!scoped&&mkMemoView==='cats'?cats:mkMemoRows();
  list.forEach((item,i)=>{
   const catRow=!scoped&&mkMemoView==='cats',row=document.createElement('div');row.className='mk-memo-row';row.dataset.id=catRow?String(i):item.id;
   if(!catRow){const handle=document.createElement('button');handle.type='button';handle.className='mk-memo-grip';handle.textContent='⠿';handle.setAttribute('aria-label','長押しで並べ替え。上下キーでも移動');handle.addEventListener('pointerdown',e=>mkMemoDragStart(e,row));handle.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();mkMemoReorder(i,i+(e.key==='ArrowUp'?-1:1))}});row.append(handle)}
-  const main=document.createElement(scoped?'div':'button');main.className='mk-memo-name';main.textContent=catRow?item:scoped?item.text:item.name;
-  if(!scoped){main.type='button';main.onclick=()=>mkMemoEnter(i)}else {const meta=document.createElement('div');meta.className='small';meta.textContent=mkMemoView==='cats'?mkMemoData.groups.find(g=>g.id===item.group)?.name||'':item.cats.join('・');main.append(meta)}
+  const main=document.createElement(wordRows?'div':'button');main.className='mk-memo-name';
+  const title=document.createElement('span');title.className='mk-memo-word';title.textContent=catRow?item:wordRows?item.text:item.name;main.append(title);
+  if(!wordRows){main.type='button';main.onclick=()=>mkMemoEnter(i);const arrow=document.createElement('span');arrow.textContent='›';arrow.className='mk-memo-arrow';main.append(arrow)}else {
+   const groupName=mkMemoData.groups.find(g=>g.id===item.group)?.name||'';
+   const categoryText=item.cats.length?(item.cats[0]+(item.cats.length>1?' ほか'+(item.cats.length-1)+'件':'')):'';
+   for(const text of (mkMemoView==='words'?[groupName,categoryText]:mkMemoView==='cats'?[groupName]:[categoryText])){if(!text)continue;const meta=document.createElement('span');meta.className='mk-memo-meta';meta.textContent=text;main.append(meta)}
+   main.title=[item.text,groupName,...item.cats].join(' / ');
+  }
   row.append(main);
-  if(!catRow){const actions=document.createElement('div');actions.className='history-actions';for(const [label,del] of [['編集',false],['削除',true]]){const b=document.createElement('button');b.type='button';b.className='ghost sm'+(del?' danger':'');b.textContent=label;b.onclick=()=>del?mkMemoDelete(scoped?'word':'group',item.id):mkMemoForm(scoped?'word':'group',item.id);actions.append(b)}row.append(actions)}else {const arrow=document.createElement('span');arrow.textContent='›';row.append(arrow)}
+  if(!catRow){const actions=document.createElement('div');actions.className='history-actions';for(const [label,del] of (wordRows?[['編集',false]]:[['編集',false],['削除',true]])){const b=document.createElement('button');b.type='button';b.className='ghost sm'+(del?' danger':'');b.textContent=label;b.onclick=()=>del?mkMemoDelete('group',item.id):mkMemoForm(wordRows?'word':'group',item.id);actions.append(b)}row.append(actions)}
   rows.append(row);
  });
- if(!list.length)rows.innerHTML='<div class="small mk-memo-empty">'+(scoped?'言葉はまだありません。〔＋言葉〕から登録できます。':'分類はまだありません。〔＋分類〕から登録してください。')+'</div>';
+ if(!list.length)rows.innerHTML='<div class="small mk-memo-empty">'+(wordRows?'言葉はまだありません。〔追加〕から登録できます。':'分類はまだありません。〔追加〕から登録してください。')+'</div>';
  $('mkMemoHint').textContent=list.length&&!(mkMemoView==='cats'&&!scoped)?'左のつまみを長押しして並べ替え':'';
 }
-function mkMemoBack(){if(mkMemoScope){mkMemoScope='';mkMemoRender()}else backOther()}
+function mkMemoBack(){history.back()}
 function mkMemoForm(kind,id='',defaults=null){
  const item=(kind==='group'?mkMemoData.groups:mkMemoData.words).find(x=>x.id===id);
- mkMemoEdit={kind,id};mkMemoDuplicate='';
+ const alreadyOpen=!!mkMemoEdit;mkMemoEdit={kind,id};mkMemoDuplicate='';
+ $('mkMemoModal').classList.toggle('mk-memo-group-form',kind==='group');$('mkMemoDeleteWord').hidden=kind!=='word'||!id;
+ $('mkMemoCategories').closest('details').open=false;
  $('mkMemoFormTitle').textContent=(kind==='group'?'分類':'言葉')+'を'+(id?'編集':'追加');
  $('mkMemoTextLabel').textContent=kind==='group'?'分類名':'言葉';
  $('mkMemoText').value=item?(kind==='group'?item.name:item.text):'';
@@ -970,9 +981,13 @@ function mkMemoForm(kind,id='',defaults=null){
  const selected=item?.cats||defaults?.cats||(mkMemoView==='cats'&&mkMemoScope?[mkMemoScope]:[]);
  $('mkMemoCategories').innerHTML=cats.map((c,i)=>`<label class="mk-memo-cat"><input type="checkbox" value="${i}" ${selected.includes(c)?'checked':''}><span>${safeHtml(c)}</span></label>`).join('');
  $('mkMemoInlineGroup').value='';$('mkMemoInlineGroupBox').hidden=true;
- $('mkMemoModal').classList.remove('hidden');document.body.classList.add('mk-memo-modal-open');
+ $('mkMemoModal').classList.remove('hidden');document.body.classList.add('mk-memo-modal-open');mkMemoViewport();if(!alreadyOpen)mkMemoHistory();
 }
-function mkMemoClose(){$('mkMemoModal').classList.add('hidden');document.body.classList.remove('mk-memo-modal-open');mkMemoEdit=null}
+function mkMemoClose(){mkMemoHide();if(history.state?.memo?.modal)history.back()}
+function mkMemoHide(){$('mkMemoModal').classList.add('hidden');document.body.classList.remove('mk-memo-modal-open');mkMemoEdit=null;document.activeElement?.blur()}
+function mkMemoDeleteEditing(){if(!mkMemoEdit?.id)return;const id=mkMemoEdit.id;mkMemoDelete('word',id);if(!mkMemoData.words.some(w=>w.id===id))mkMemoClose()}
+function mkMemoViewport(){const m=$('mkMemoModal');if(!m||m.classList.contains('hidden'))return;const v=window.visualViewport;m.style.top=(v?.offsetTop||0)+'px';m.style.height=(v?.height||innerHeight)+'px'}
+window.visualViewport?.addEventListener('resize',mkMemoViewport);window.visualViewport?.addEventListener('scroll',mkMemoViewport);window.addEventListener('resize',mkMemoViewport);
 function mkMemoNewGroupInline(){const name=$('mkMemoInlineGroup').value.trim();if(!name){$('mkMemoFeedback').textContent='分類名を入力してください。';return}let g=mkMemoData.groups.find(x=>x.name.trim()===name);if(!g){g={id:mkMemoId(),name};mkMemoData.groups.push(g);mkMemoPersist()}const opt=document.createElement('option');opt.value=g.id;opt.textContent=g.name;if(![...$('mkMemoGroup').options].some(o=>o.value===g.id))$('mkMemoGroup').append(opt);$('mkMemoGroup').value=g.id;$('mkMemoInlineGroupBox').hidden=true;$('mkMemoFeedback').textContent=''}
 function mkMemoSave(next=false){
  if(!mkMemoEdit)return;const text=$('mkMemoText').value.trim(),{kind,id}=mkMemoEdit;
@@ -991,7 +1006,7 @@ function mkMemoDelete(kind,id){const list=kind==='group'?mkMemoData.groups:mkMem
  if(kind==='group'){mkMemoData.groups=mkMemoData.groups.filter(g=>g.id!==id);mkMemoData.words=mkMemoData.words.filter(w=>w.group!==id)}else mkMemoData.words=mkMemoData.words.filter(w=>w.id!==id);mkMemoPersist()
 }
 // Reorder only the visible subset, retaining positions of words in other groups.
-function mkMemoReorder(from,to){const visible=mkMemoRows();if(to<0||to>=visible.length||from===to)return;const ids=new Set(visible.map(x=>x.id));visible.splice(to,0,visible.splice(from,1)[0]);if(!mkMemoScope)mkMemoData.groups=visible;else {let i=0;mkMemoData.words=mkMemoData.words.map(w=>ids.has(w.id)?visible[i++]:w)}mkMemoPersist()}
+function mkMemoReorder(from,to){const visible=mkMemoRows();if(to<0||to>=visible.length||from===to)return;const ids=new Set(visible.map(x=>x.id));visible.splice(to,0,visible.splice(from,1)[0]);if(!mkMemoScope&&mkMemoView==='groups')mkMemoData.groups=visible;else {let i=0;mkMemoData.words=mkMemoData.words.map(w=>ids.has(w.id)?visible[i++]:w)}mkMemoPersist()}
 function mkMemoDragStart(e,row){
  if(e.button!==0||mkMemoDrag)return;e.preventDefault();
  const grip=$('mkMemoRows');grip.setPointerCapture(e.pointerId);
@@ -1162,6 +1177,7 @@ function mkState(){return {
 }}
 function mkRestoreState(state){
   if(!state||typeof state!=='object')throw new Error('Invalid data');
+  state=MKMigrations.renameCategories(state);
   mkMemoData=state.mkMemoData===undefined?{groups:[],words:[]}:mkMemoValidate(state.mkMemoData);
   const arrayKeys=['txs','loans','cashbook','snapshots','wishes','recurring','eventsData','deletedEventNames','loanArchivedPeople','loanGroups'];
   for(const key of arrayKeys)if(state[key]!==undefined&&!Array.isArray(state[key]))throw new Error('Invalid '+key);
@@ -1217,6 +1233,7 @@ async function mkBoot(){
   mkDefaultEventTag();
   renderPayBtns();renderCharge();renderAll();updateForm();initMoneyInputs();mkMemoRender();
   try{const last=sessionStorage.getItem('mk-last-page');if(last&&$(last)?.classList.contains('page')){const navBtn=document.querySelector(`.nav[onclick*="'${last}'"]`);nav(last,navBtn||null);if(['loans','events','wish'].includes(last)){const otherNav=document.querySelectorAll('.nav')[5];if(otherNav)otherNav.classList.add('active')}}}catch(_){}
+  if(document.querySelector('.page.active')?.id==='memoManager'){history.replaceState({mkPage:'other'},'',location.href);mkMemoView='words';mkMemoScope='';mkMemoRender();mkMemoHistory()}
   new MutationObserver(()=>initMoneyInputs()).observe(document.body,{childList:true,subtree:true});
 }
 mkBoot();
