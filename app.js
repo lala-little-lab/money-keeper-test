@@ -935,36 +935,46 @@ function mkMemoTab(view){if(view===mkMemoView&&!mkMemoScope)return;if(view==='wo
 function mkMemoEnter(index){mkMemoScope=mkMemoView==='groups'?mkMemoData.groups[index].id:cats[index];mkMemoRender();mkMemoHistory()}
 function mkMemoRows(){return mkMemoScope?mkMemoData.words.filter(w=>mkMemoView==='groups'?w.group===mkMemoScope:w.cats.includes(mkMemoScope)):mkMemoView==='words'?[...mkMemoData.words]:[...mkMemoData.groups]}
 function mkMemoPersist(){mkQueueSave();mkMemoRender()}
+function mkMemoScrollStrip(texts,className){
+ const strip=document.createElement('div');strip.className='mk-memo-strip '+className;
+ strip.setAttribute('aria-label',className==='mk-memo-category-strip'?'関連カテゴリ':'登録済みの言葉');strip.tabIndex=0;
+ texts.forEach(text=>{const tag=document.createElement('span');tag.className='mk-memo-tag';tag.textContent=text;strip.append(tag)});
+ const update=()=>{strip.classList.toggle('has-more',strip.scrollWidth-strip.clientWidth-strip.scrollLeft>2);strip.classList.toggle('has-before',strip.scrollLeft>2)};
+ strip.addEventListener('scroll',update,{passive:true});requestAnimationFrame(update);return strip;
+}
+window.addEventListener('resize',()=>document.querySelectorAll('#mkMemoRows .mk-memo-strip').forEach(s=>s.dispatchEvent(new Event('scroll'))));
 function mkMemoRender(){
  if(!$('mkMemoRows'))return;
- const scoped=!!mkMemoScope,wordRows=scoped||mkMemoView==='words',group=mkMemoData.groups.find(g=>g.id===mkMemoScope);
+ const scoped=!!mkMemoScope,wordRows=scoped||mkMemoView==='words',group=mkMemoData.groups.find(g=>g.id===mkMemoScope),allWords=!scoped&&mkMemoView==='words';
  $('mkMemoHeading').textContent=scoped?(mkMemoView==='groups'?'分類：'+(group?.name||''):'カテゴリ：'+mkMemoScope):'🎀 メモ';
  $('mkMemoTabs').hidden=scoped;
  $('mkMemoBack').textContent=scoped?'← 一覧へ':mkMemoView==='words'?'← その他へ':'← 言葉一覧へ';
- $('mkMemoAdd').hidden=!scoped&&mkMemoView==='cats';
- $('mkMemoAdd').textContent='追加';
+ $('mkMemoAdd').hidden=!scoped&&mkMemoView==='cats';$('mkMemoAdd').textContent='＋追加';
  $('mkMemoListLabel').textContent=wordRows?'言葉':mkMemoView==='groups'?'分類':'カテゴリ';
  document.querySelectorAll('#mkMemoTabs button').forEach(b=>b.classList.toggle('active',b.dataset.view===mkMemoView));
  const rows=$('mkMemoRows');rows.innerHTML='';
  const list=!scoped&&mkMemoView==='cats'?cats:mkMemoRows();
- list.forEach((item,i)=>{
-  const catRow=!scoped&&mkMemoView==='cats',row=document.createElement('div');row.className='mk-memo-row';row.dataset.id=catRow?String(i):item.id;
-  if(!catRow){const handle=document.createElement('button');handle.type='button';handle.className='mk-memo-grip';handle.textContent='⠿';handle.setAttribute('aria-label','長押しで並べ替え。上下キーでも移動');handle.addEventListener('pointerdown',e=>mkMemoDragStart(e,row));handle.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();mkMemoReorder(i,i+(e.key==='ArrowUp'?-1:1))}});row.append(handle)}
+ const appendRow=(item,i)=>{
+  const catRow=!scoped&&mkMemoView==='cats',row=document.createElement('div');row.className='mk-memo-row'+(catRow?' mk-memo-category-row':'')+(wordRows?' mk-memo-word-row':'');row.dataset.id=catRow?String(i):item.id;
+  if(!catRow&&!allWords){const handle=document.createElement('button');handle.type='button';handle.className='mk-memo-grip';handle.textContent='⠿';handle.setAttribute('aria-label','長押しで並べ替え。上下キーでも移動');handle.addEventListener('pointerdown',e=>mkMemoDragStart(e,row));handle.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();mkMemoReorder(i,i+(e.key==='ArrowUp'?-1:1))}});row.append(handle)}
   const main=document.createElement(wordRows?'div':'button');main.className='mk-memo-name';
   const title=document.createElement('span');title.className='mk-memo-word';title.textContent=catRow?item:wordRows?item.text:item.name;main.append(title);
-  if(!wordRows){main.type='button';main.onclick=()=>mkMemoEnter(i);const arrow=document.createElement('span');arrow.textContent='›';arrow.className='mk-memo-arrow';main.append(arrow)}else {
+  if(!wordRows){main.type='button';main.onclick=()=>mkMemoEnter(i);const arrow=document.createElement('span');arrow.textContent='›';arrow.className='mk-memo-arrow';main.append(arrow)}else{
    const groupName=mkMemoData.groups.find(g=>g.id===item.group)?.name||'';
-   const categoryText=item.cats.length?(item.cats[0]+(item.cats.length>1?' ほか'+(item.cats.length-1)+'件':'')):'';
-   for(const text of (mkMemoView==='words'?[groupName,categoryText]:mkMemoView==='cats'?[groupName]:[categoryText])){if(!text)continue;const meta=document.createElement('span');meta.className='mk-memo-meta';meta.textContent=text;main.append(meta)}
+   if(mkMemoView==='cats'){const meta=document.createElement('span');meta.className='mk-memo-meta';meta.textContent=groupName;main.append(meta)}
+   else if(item.cats.length)main.append(mkMemoScrollStrip(item.cats,'mk-memo-category-strip'));
    main.title=[item.text,groupName,...item.cats].join(' / ');
   }
   row.append(main);
-  if(!catRow){const actions=document.createElement('div');actions.className='history-actions';for(const [label,del] of (wordRows?[['編集',false]]:[['編集',false],['削除',true]])){const b=document.createElement('button');b.type='button';b.className='ghost sm'+(del?' danger':'');b.textContent=label;b.onclick=()=>del?mkMemoDelete('group',item.id):mkMemoForm(wordRows?'word':'group',item.id);actions.append(b)}row.append(actions)}
+  if(catRow){const words=mkMemoData.groups.flatMap(g=>mkMemoData.words.filter(w=>w.group===g.id&&w.cats.includes(item))).map(w=>w.text);if(words.length)row.append(mkMemoScrollStrip(words,'mk-memo-preview'));else{const empty=document.createElement('span');empty.className='mk-memo-preview-empty';empty.textContent='登録なし';row.append(empty)}}
+  else{const actions=document.createElement('div');actions.className='history-actions';for(const [label,del] of(wordRows?[['編集',false]]:[['編集',false],['削除',true]])){const b=document.createElement('button');b.type='button';b.className='ghost sm'+(del?' danger':'');b.textContent=label;b.onclick=()=>del?mkMemoDelete('group',item.id):mkMemoForm(wordRows?'word':'group',item.id);actions.append(b)}row.append(actions)}
   rows.append(row);
- });
- if(!list.length)rows.innerHTML='<div class="small mk-memo-empty">'+(wordRows?'言葉はまだありません。〔追加〕から登録できます。':'分類はまだありません。〔追加〕から登録してください。')+'</div>';
- $('mkMemoHint').textContent=list.length&&!(mkMemoView==='cats'&&!scoped)?'左のつまみを長押しして並べ替え':'';
+ };
+ if(allWords){mkMemoData.groups.forEach(g=>{const words=list.filter(w=>w.group===g.id);if(!words.length)return;const heading=document.createElement('div');heading.className='mk-memo-section-title';heading.textContent=g.name;rows.append(heading);words.forEach(appendRow)})}else list.forEach(appendRow);
+ if(!list.length)rows.innerHTML='<div class="small mk-memo-empty">'+(wordRows?'言葉はまだありません。〔＋追加〕から登録できます。':'分類はまだありません。〔＋追加〕から登録してください。')+'</div>';
+ $('mkMemoHint').textContent=list.length&&!allWords&&!(mkMemoView==='cats'&&!scoped)?'左のつまみを長押しして並べ替え':'';
 }
+
 function mkMemoBack(){history.back()}
 function mkMemoForm(kind,id='',defaults=null){
  const item=(kind==='group'?mkMemoData.groups:mkMemoData.words).find(x=>x.id===id);
@@ -1006,7 +1016,7 @@ function mkMemoDelete(kind,id){const list=kind==='group'?mkMemoData.groups:mkMem
  if(kind==='group'){mkMemoData.groups=mkMemoData.groups.filter(g=>g.id!==id);mkMemoData.words=mkMemoData.words.filter(w=>w.group!==id)}else mkMemoData.words=mkMemoData.words.filter(w=>w.id!==id);mkMemoPersist()
 }
 // Reorder only the visible subset, retaining positions of words in other groups.
-function mkMemoReorder(from,to){const visible=mkMemoRows();if(to<0||to>=visible.length||from===to)return;const ids=new Set(visible.map(x=>x.id));visible.splice(to,0,visible.splice(from,1)[0]);if(!mkMemoScope&&mkMemoView==='groups')mkMemoData.groups=visible;else {let i=0;mkMemoData.words=mkMemoData.words.map(w=>ids.has(w.id)?visible[i++]:w)}mkMemoPersist()}
+function mkMemoReorder(from,to){if(!mkMemoScope&&mkMemoView==='words')return;const visible=mkMemoRows();if(to<0||to>=visible.length||from===to)return;const ids=new Set(visible.map(x=>x.id));visible.splice(to,0,visible.splice(from,1)[0]);if(!mkMemoScope&&mkMemoView==='groups')mkMemoData.groups=visible;else {let i=0;mkMemoData.words=mkMemoData.words.map(w=>ids.has(w.id)?visible[i++]:w)}mkMemoPersist()}
 function mkMemoDragStart(e,row){
  if(e.button!==0||mkMemoDrag)return;e.preventDefault();
  const grip=$('mkMemoRows');grip.setPointerCapture(e.pointerId);
