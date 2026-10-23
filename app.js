@@ -990,7 +990,7 @@ function mkMemoForm(kind,id='',defaults=null){
  $('mkMemoGroup').innerHTML='<option value="">分類を選択</option>'+mkMemoData.groups.map(g=>`<option value="${safeHtml(g.id)}">${safeHtml(g.name)}</option>`).join('');$('mkMemoGroup').value=chosen;
  const selected=item?.cats||defaults?.cats||(mkMemoView==='cats'&&mkMemoScope?[mkMemoScope]:[]);
  $('mkMemoCategories').innerHTML=cats.map((c,i)=>`<label class="mk-memo-cat"><input type="checkbox" value="${i}" ${selected.includes(c)?'checked':''}><span>${safeHtml(c)}</span></label>`).join('');
- $('mkMemoInlineGroup').value='';$('mkMemoInlineGroupBox').hidden=true;
+ $('mkMemoInlineGroup').value='';mkMemoToggleInlineGroup(false);
  $('mkMemoModal').classList.remove('hidden');document.body.classList.add('mk-memo-modal-open');mkMemoViewport();if(!alreadyOpen)mkMemoHistory();
 }
 function mkMemoClose(){mkMemoHide();if(history.state?.memo?.modal)history.back()}
@@ -998,7 +998,8 @@ function mkMemoHide(){$('mkMemoModal').classList.add('hidden');document.body.cla
 function mkMemoDeleteEditing(){if(!mkMemoEdit?.id)return;const id=mkMemoEdit.id;mkMemoDelete('word',id);if(!mkMemoData.words.some(w=>w.id===id))mkMemoClose()}
 function mkMemoViewport(){const m=$('mkMemoModal');if(!m||m.classList.contains('hidden'))return;const v=window.visualViewport;m.style.top=(v?.offsetTop||0)+'px';m.style.height=(v?.height||innerHeight)+'px'}
 window.visualViewport?.addEventListener('resize',mkMemoViewport);window.visualViewport?.addEventListener('scroll',mkMemoViewport);window.addEventListener('resize',mkMemoViewport);
-function mkMemoNewGroupInline(){const name=$('mkMemoInlineGroup').value.trim();if(!name){$('mkMemoFeedback').textContent='分類名を入力してください。';return}let g=mkMemoData.groups.find(x=>x.name.trim()===name);if(!g){g={id:mkMemoId(),name};mkMemoData.groups.push(g);mkMemoPersist()}const opt=document.createElement('option');opt.value=g.id;opt.textContent=g.name;if(![...$('mkMemoGroup').options].some(o=>o.value===g.id))$('mkMemoGroup').append(opt);$('mkMemoGroup').value=g.id;$('mkMemoInlineGroupBox').hidden=true;$('mkMemoFeedback').textContent=''}
+function mkMemoToggleInlineGroup(open){const box=$('mkMemoInlineGroupBox'),button=$('mkMemoInlineGroupToggle');const show=typeof open==='boolean'?open:box.hidden;box.hidden=!show;button.textContent=show?'閉じる':'＋追加';button.setAttribute('aria-expanded',String(show));if(show)$('mkMemoInlineGroup').focus()}
+function mkMemoNewGroupInline(){const name=$('mkMemoInlineGroup').value.trim();if(!name){$('mkMemoFeedback').textContent='分類名を入力してください。';return}let g=mkMemoData.groups.find(x=>x.name.trim()===name);if(!g){g={id:mkMemoId(),name};mkMemoData.groups.push(g);mkMemoPersist()}const opt=document.createElement('option');opt.value=g.id;opt.textContent=g.name;if(![...$('mkMemoGroup').options].some(o=>o.value===g.id))$('mkMemoGroup').append(opt);$('mkMemoGroup').value=g.id;mkMemoToggleInlineGroup(false);$('mkMemoInlineGroup').value='';$('mkMemoInlineGroupToggle').focus();$('mkMemoFeedback').textContent=''}
 function mkMemoSave(next=false){
  if(!mkMemoEdit)return;const text=$('mkMemoText').value.trim(),{kind,id}=mkMemoEdit;
  $('mkMemoFeedback').textContent='';$('mkMemoDuplicateActions').hidden=true;mkMemoDuplicate='';

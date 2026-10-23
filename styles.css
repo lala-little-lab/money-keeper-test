@@ -759,8 +759,8 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 #mkMemoModal summary{display:flex;align-items:center;justify-content:space-between;gap:8px;list-style:none;background:#fcf3f7;border:1px solid #ead9e0;border-radius:10px;padding:10px;font-size:12px}#mkMemoModal summary::-webkit-details-marker{display:none}#mkMemoModal summary::after{content:'＋';flex:none}#mkMemoModal details[open]>summary::after{content:'−'}
 
 /* #81 Grouped vocabulary overview and independently scrolling category tags. */
-.mk-memo-section-title{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12px;margin:15px 0 2px;font-weight:400}
-.mk-memo-section-title::after{content:'';height:1px;background:var(--line);flex:1}
+.mk-memo-section-title{display:flex;align-items:center;gap:10px;color:#ad708b;font-size:12px;margin:15px 0 2px;font-weight:500}
+.mk-memo-section-title::after{content:'';height:1px;background:#d5b3c2;flex:1}
 .mk-memo-word-row .history-actions{flex:none}
 .mk-memo-word-row .mk-memo-word{flex:0 1 auto;max-width:100%}
 .mk-memo-word-row .mk-memo-name:has(.mk-memo-strip) .mk-memo-word{max-width:55%}
