@@ -76,7 +76,7 @@ function nav(id,b){
  mkDisplayPage(id,b);
 }
 window.addEventListener('popstate',function(event){
- if(event.state?.memo){mkMemoHide();mkMemoView=event.state.memo.view||'words';mkMemoScope=event.state.memo.scope||'';if(mkMemoView==='groups'&&mkMemoScope&&!mkMemoData.groups.some(g=>g.id===mkMemoScope))mkMemoScope='';mkMemoRender();mkDisplayPage('memoManager',mkNavigationButton('memoManager'));if(event.state.memo.modal)mkMemoHistory(true);return;}
+ if(event.state?.memo){mkMemoOrigin=event.state.memo.origin||'other';mkMemoHide();mkMemoView=event.state.memo.view||'words';mkMemoScope=event.state.memo.scope||'';if(mkMemoView==='groups'&&mkMemoScope&&!mkMemoData.groups.some(g=>g.id===mkMemoScope))mkMemoScope='';mkMemoRender();mkDisplayPage('memoManager',mkNavigationButton('memoManager'));if(event.state.memo.modal)mkMemoHistory(true);return;}
  if(document.querySelector('.page.active')?.id==='memoManager')mkMemoHide();
  const id=event.state&&event.state.mkPage;
  if(!id||!$(id)||!$(id).classList.contains('page'))return;
@@ -930,8 +930,9 @@ function mkMemoValidate(data){
  return data;
 }
 function mkMemoId(){return 'memo-'+Date.now().toString(36)+'-'+Math.random().toString(36).slice(2,10)}
-function mkMemoHistory(replace=false){const state={mkPage:'memoManager',memo:{view:mkMemoView,scope:mkMemoScope,modal:!!mkMemoEdit}};history[replace?'replaceState':'pushState'](state,'',location.href)}
-function mkMemoOpen(){mkMemoScope='';mkMemoView='words';mkMemoRender();openOther('memoManager');mkMemoHistory(true)}
+let mkMemoOrigin='other';
+function mkMemoHistory(replace=false){const state={mkPage:'memoManager',memo:{view:mkMemoView,scope:mkMemoScope,modal:!!mkMemoEdit,origin:mkMemoOrigin}};history[replace?'replaceState':'pushState'](state,'',location.href)}
+function mkMemoOpen(origin='other'){mkMemoOrigin=origin;mkMemoScope='';mkMemoView='words';mkMemoRender();openOther('memoManager');mkMemoHistory(true)}
 function mkMemoTab(view){if(view===mkMemoView&&!mkMemoScope)return;if(view==='words'){if(mkMemoView!=='words')history.go(mkMemoScope?-2:-1);return}const replace=mkMemoView!=='words'&&!mkMemoScope;mkMemoView=view;mkMemoScope='';mkMemoRender();mkMemoHistory(replace)}
 function mkMemoEnter(index){mkMemoScope=mkMemoView==='groups'?mkMemoData.groups[index].id:cats[index];mkMemoRender();mkMemoHistory()}
 function mkMemoRows(){return mkMemoScope?mkMemoData.words.filter(w=>mkMemoView==='groups'?w.group===mkMemoScope:w.cats.includes(mkMemoScope)):mkMemoView==='words'?[...mkMemoData.words]:[...mkMemoData.groups]}
@@ -949,7 +950,7 @@ function mkMemoRender(){
  const scoped=!!mkMemoScope,wordRows=scoped||mkMemoView==='words',group=mkMemoData.groups.find(g=>g.id===mkMemoScope),allWords=!scoped&&mkMemoView==='words';
  $('mkMemoHeading').textContent=scoped?(mkMemoView==='groups'?'分類：'+(group?.name||''):'カテゴリ：'+mkMemoScope):'🎀 メモ';
  $('mkMemoTabs').hidden=scoped;
- $('mkMemoBack').textContent=scoped?'← 一覧へ':mkMemoView==='words'?'← その他へ':'← 言葉一覧へ';
+ $('mkMemoBack').textContent=scoped?'← 一覧へ':mkMemoView==='words'?(mkMemoOrigin==='record'?'← 記録へ':'← その他へ'):'← 言葉一覧へ';
  $('mkMemoAdd').hidden=!scoped&&mkMemoView==='cats';$('mkMemoAdd').textContent='＋追加';
  $('mkMemoListLabel').textContent=wordRows?'言葉':mkMemoView==='groups'?'分類':'カテゴリ';
  document.querySelectorAll('#mkMemoTabs button').forEach(b=>b.classList.toggle('active',b.dataset.view===mkMemoView));
@@ -957,7 +958,6 @@ function mkMemoRender(){
  const list=!scoped&&mkMemoView==='cats'?cats:mkMemoRows();
  const appendRow=(item,i)=>{
   const catRow=!scoped&&mkMemoView==='cats',row=document.createElement('div');row.className='mk-memo-row'+(catRow?' mk-memo-category-row':'')+(wordRows?' mk-memo-word-row':'');row.dataset.id=catRow?String(i):item.id;
-  if(!catRow&&!allWords){const handle=document.createElement('button');handle.type='button';handle.className='mk-memo-grip';handle.textContent='⠿';handle.setAttribute('aria-label','長押しで並べ替え。上下キーでも移動');handle.addEventListener('pointerdown',e=>mkMemoDragStart(e,row));handle.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();mkMemoReorder(i,i+(e.key==='ArrowUp'?-1:1))}});row.append(handle)}
   const main=document.createElement(wordRows?'div':'button');main.className='mk-memo-name';
   const title=document.createElement('span');title.className='mk-memo-word';title.textContent=catRow?item:wordRows?item.text:item.name;main.append(title);
   if(!wordRows){main.type='button';main.onclick=()=>mkMemoEnter(i);const arrow=document.createElement('span');arrow.textContent='›';arrow.className='mk-memo-arrow';main.append(arrow)}else{
@@ -969,11 +969,12 @@ function mkMemoRender(){
   row.append(main);
   if(catRow){const words=mkMemoData.groups.flatMap(g=>mkMemoData.words.filter(w=>w.group===g.id&&w.cats.includes(item))).map(w=>w.text);if(words.length)row.append(mkMemoScrollStrip(words,'mk-memo-preview'));else{const empty=document.createElement('span');empty.className='mk-memo-preview-empty';empty.textContent='登録なし';row.append(empty)}}
   else{const actions=document.createElement('div');actions.className='history-actions';for(const [label,del] of(wordRows?[['編集',false]]:[['編集',false],['削除',true]])){const b=document.createElement('button');b.type='button';b.className='ghost sm'+(del?' danger':'');b.textContent=label;b.onclick=()=>del?mkMemoDelete('group',item.id):mkMemoForm(wordRows?'word':'group',item.id);actions.append(b)}row.append(actions)}
+  if(!catRow&&!allWords){const handle=document.createElement('button');handle.type='button';handle.className='mk-memo-grip';handle.textContent='⠿';handle.setAttribute('aria-label','長押しで並べ替え。上下キーでも移動');handle.addEventListener('pointerdown',e=>mkMemoDragStart(e,row));handle.addEventListener('keydown',e=>{if(['ArrowUp','ArrowDown'].includes(e.key)){e.preventDefault();mkMemoReorder(i,i+(e.key==='ArrowUp'?-1:1))}});row.append(handle)}
   rows.append(row);
  };
  if(allWords){mkMemoData.groups.forEach(g=>{const words=list.filter(w=>w.group===g.id);if(!words.length)return;const heading=document.createElement('div');heading.className='mk-memo-section-title';heading.textContent=g.name;rows.append(heading);words.forEach(appendRow)})}else list.forEach(appendRow);
  if(!list.length)rows.innerHTML='<div class="small mk-memo-empty">'+(wordRows?'言葉はまだありません。〔＋追加〕から登録できます。':'分類はまだありません。〔＋追加〕から登録してください。')+'</div>';
- $('mkMemoHint').textContent=list.length&&!allWords&&!(mkMemoView==='cats'&&!scoped)?'左のつまみを長押しして並べ替え':'';
+ $('mkMemoHint').textContent=list.length&&!allWords&&!(mkMemoView==='cats'&&!scoped)?'右のつまみを長押しして並べ替え':'';
 }
 
 function mkMemoBack(){history.back()}
@@ -1047,7 +1048,7 @@ function mkCandidateTabs(){const c=mkCandidateCurrentCategory(),related=!!c&&mkM
 function mkCandidateWords(){if(mkCandidateTab==='__related'){const c=mkCandidateCurrentCategory();return mkMemoData.groups.flatMap(g=>mkMemoData.words.filter(w=>w.group===g.id&&w.cats.includes(c)))}return mkMemoData.words.filter(w=>w.group===mkCandidateTab)}
 function mkCandidateToggle(){mkCandidateOpen=!mkCandidateOpen;if(mkCandidateOpen){$('memo').blur();mkCandidateTab='';mkCandidateSync()}mkCandidateRender()}
 function mkCandidateRender(){
- const toggle=$('mkCandidateToggle');if(!toggle)return;
+ const toggle=$('mkCandidateToggle');if(!toggle)return;$('mkCandidateManage').hidden=!mkCandidateOpen;
  toggle.textContent=mkCandidateOpen?'候補を閉じる −':'候補から選ぶ ＋';toggle.setAttribute('aria-expanded',String(mkCandidateOpen));$('mkCandidatePanel').hidden=!mkCandidateOpen;
  if(!mkCandidateOpen)return;
  const tabs=mkCandidateTabs(),c=mkCandidateCurrentCategory();if(c!==mkCandidateCategory||!tabs.some(t=>t.id===mkCandidateTab)){mkCandidateTab=tabs[0]?.id||'';mkCandidateCategory=c}
