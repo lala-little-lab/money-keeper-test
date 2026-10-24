@@ -302,9 +302,10 @@ function mkSyncEventMemoParts(){
  }
  mkEventMemoPrevious=value;
 }
-function mkToggleEventMemo(id,fromPicker=false){
+function mkToggleEventMemo(id,fromPicker=false,fromCandidate=false){
  mkCandidateSync();
- if(!mkEventMemoMode())return;
+ if(!fromCandidate&&!mkEventMemoMode())return;
+ mkMemoUndo=null;mkMemoClearPaint();
  const event=(fromPicker?eventsData.filter(e=>!e.archived):mkEventPeriodMatches()).find(e=>e.id===id);if(!event)return;
  mkSyncEventMemoParts();
  const memo=$('memo'),part=mkEventMemoParts.get(id);
@@ -322,7 +323,7 @@ function mkToggleEventMemo(id,fromPicker=false){
   memo.value+=text;mkEventMemoPrevious=memo.value;
   mkEventMemoParts.set(id,{start,end:start+text.length,text});
  }
- mkEventMemoPrevious=memo.value;mkCandidateSync();mkCandidateCleanStart();mkCandidatePaint();mkRenderEventSuggestion();
+ mkEventMemoPrevious=memo.value;mkCandidateSync();mkCandidateCleanStart();mkCandidatePaint();mkRenderEventSuggestion();mkMemoClearPaint();if(!part)mkMemoShowEnd();
 }
 function mkRenderEventMemo(box){
  mkSyncEventMemoParts();
@@ -1040,12 +1041,31 @@ function mkMemoDragFinish(save){const d=mkMemoDrag;if(!d)return;mkMemoDrag=null;
  if(d.active&&save){const visible=mkMemoRows(),from=visible.findIndex(x=>x.id===d.row.dataset.id),to=[...$('mkMemoRows').children].indexOf(d.row);mkMemoReorder(from,to)}mkMemoRender();
 }
 
+// #85 Clear only the memo draft, with a one-step undo.
+let mkMemoUndo=null;
+function mkMemoClearPaint(){const b=$('mkMemoClear');b.textContent=mkMemoUndo?'元に戻す':'クリア';b.disabled=!mkMemoUndo&&!$('memo').value}
+function mkMemoShowEnd(){requestAnimationFrame(()=>{$('memo').scrollLeft=$('memo').scrollWidth})}
+function mkMemoClear(){
+ const memo=$('memo');mkCandidateSync();mkSyncEventMemoParts();
+ if(mkMemoUndo){
+  const saved=mkMemoUndo;mkMemoUndo=null;memo.value=saved.value;
+  mkCandidateParts.clear();saved.words.forEach(([id,p])=>mkCandidateParts.set(id,{...p}));
+  mkEventMemoParts.clear();saved.events.forEach(([id,p])=>mkEventMemoParts.set(id,{...p}));
+  mkCandidatePrevious=memo.value;mkEventMemoPrevious=memo.value;
+  requestAnimationFrame(()=>{memo.scrollLeft=saved.scroll});
+ }else if(memo.value){
+  mkMemoUndo={value:memo.value,scroll:memo.scrollLeft,words:[...mkCandidateParts].map(([id,p])=>[id,{...p}]),events:[...mkEventMemoParts].map(([id,p])=>[id,{...p}])};
+  memo.value='';mkCandidateParts.clear();mkEventMemoParts.clear();mkCandidatePrevious='';mkEventMemoPrevious='';
+ }
+ mkCandidateBefore=null;mkCandidatePaint();mkRenderEventSuggestion();mkMemoClearPaint();
+}
+
 // #83 Inline memo vocabulary picker. Ownership is local to the current draft.
 let mkCandidateOpen=false,mkCandidateTab='',mkCandidateCategory='',mkCandidatePrevious='',mkCandidateBefore=null,mkCandidateGesture=null,mkCandidateIgnoreClick=0;
 const mkCandidateParts=new Map();
 function mkCandidateCurrentCategory(){return mode==='expense'||(mode==='loan'&&['lend','borrowed'].includes(loanKind))?category:''}
-function mkCandidateTabs(){const c=mkCandidateCurrentCategory(),related=!!c&&mkMemoData.words.some(w=>w.cats.includes(c));return [...(related?[{id:'__related',name:'関連'}]:[]),...mkMemoData.groups]}
-function mkCandidateWords(){if(mkCandidateTab==='__related'){const c=mkCandidateCurrentCategory();return mkMemoData.groups.flatMap(g=>mkMemoData.words.filter(w=>w.group===g.id&&w.cats.includes(c)))}return mkMemoData.words.filter(w=>w.group===mkCandidateTab)}
+function mkCandidateTabs(){const c=mkCandidateCurrentCategory(),related=!!c&&mkMemoData.words.some(w=>w.cats.includes(c));return [...(related?[{id:'__related',name:'関連'}]:[]),...mkMemoData.groups,{id:'__events',name:'特別費'}]}
+function mkCandidateWords(){if(mkCandidateTab==='__events')return eventsData.filter(e=>!e.archived).map(e=>({id:e.id,text:e.name,event:true}));if(mkCandidateTab==='__related'){const c=mkCandidateCurrentCategory();return mkMemoData.groups.flatMap(g=>mkMemoData.words.filter(w=>w.group===g.id&&w.cats.includes(c)))}return mkMemoData.words.filter(w=>w.group===mkCandidateTab)}
 function mkCandidateToggle(){mkCandidateOpen=!mkCandidateOpen;if(mkCandidateOpen){$('memo').blur();mkCandidateTab='';mkCandidateSync()}mkCandidateRender()}
 function mkCandidateRender(){
  const toggle=$('mkCandidateToggle');if(!toggle)return;$('mkCandidateManage').hidden=!mkCandidateOpen;
@@ -1055,12 +1075,12 @@ function mkCandidateRender(){
  const tabBox=$('mkCandidateTabs');tabBox.innerHTML='';
  tabs.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='mk-candidate-tab';b.id='mkCandidateTab'+i;b.textContent=t.name;b.dataset.tab=t.id;b.setAttribute('role','tab');b.setAttribute('aria-selected',String(t.id===mkCandidateTab));b.setAttribute('aria-controls','mkCandidateWords');b.tabIndex=t.id===mkCandidateTab?0:-1;b.onclick=()=>mkCandidateChooseTab(t.id);b.onkeydown=e=>{if(['ArrowLeft','ArrowRight','Home','End'].includes(e.key)){e.preventDefault();let n=e.key==='Home'?0:e.key==='End'?tabs.length-1:Math.max(0,Math.min(tabs.length-1,i+(e.key==='ArrowRight'?1:-1)));mkCandidateChooseTab(tabs[n].id);$('mkCandidateTabs').children[n].focus({preventScroll:true})}};tabBox.append(b)});
  const list=$('mkCandidateWords');list.innerHTML='';const activeIndex=tabs.findIndex(t=>t.id===mkCandidateTab);if(activeIndex>=0)list.setAttribute('aria-labelledby','mkCandidateTab'+activeIndex);else list.removeAttribute('aria-labelledby');
- const words=mkCandidateWords();words.forEach(w=>{const b=document.createElement('button');b.type='button';b.className='mk-candidate-word';b.textContent=w.text;b.dataset.word=w.id;b.setAttribute('aria-pressed',String(mkCandidateParts.has(w.id)));b.onclick=()=>{if(performance.now()>=mkCandidateIgnoreClick)mkCandidateToggleWord(w.id)};list.append(b)});
- if(!words.length){const empty=document.createElement('div');empty.className='mk-candidate-empty';empty.textContent=mkMemoData.words.length?'この分類には言葉がありません。':'「その他 → メモ」で言葉を登録できます。';list.append(empty)}
+ const words=mkCandidateWords();words.forEach(w=>{const b=document.createElement('button');b.type='button';b.className='mk-candidate-word';b.textContent=w.text;b.dataset.word=w.id;if(w.event)b.dataset.event='true';b.setAttribute('aria-pressed',String((w.event?mkEventMemoParts:mkCandidateParts).has(w.id)));b.onclick=()=>{if(performance.now()>=mkCandidateIgnoreClick){if(w.event)mkToggleEventMemo(w.id,true,true);else mkCandidateToggleWord(w.id)}};list.append(b)});
+ if(!words.length){const empty=document.createElement('div');empty.className='mk-candidate-empty';empty.textContent=mkCandidateTab==='__events'?'表示できる特別費イベントがありません。':mkMemoData.words.length?'この分類には言葉がありません。':'「その他 → メモ」で言葉を登録できます。';list.append(empty)}
  requestAnimationFrame(()=>{const b=tabBox.querySelector('[aria-selected="true"]');if(b){const left=b.offsetLeft-tabBox.offsetLeft;if(left<tabBox.scrollLeft)tabBox.scrollLeft=left;else if(left+b.offsetWidth>tabBox.scrollLeft+tabBox.clientWidth)tabBox.scrollLeft=left+b.offsetWidth-tabBox.clientWidth}});
 }
 function mkCandidateChooseTab(id){if(id===mkCandidateTab)return;mkCandidateTab=id;mkCandidateRender();$('mkCandidateWords').scrollTop=0}
-function mkCandidatePaint(){document.querySelectorAll('#mkCandidateWords [data-word]').forEach(b=>b.setAttribute('aria-pressed',String(mkCandidateParts.has(b.dataset.word))))}
+function mkCandidatePaint(){document.querySelectorAll('#mkCandidateWords [data-word]').forEach(b=>b.setAttribute('aria-pressed',String((b.dataset.event?mkEventMemoParts:mkCandidateParts).has(b.dataset.word))))}
 function mkCandidateMoveParts(parts,start,end,replacement,value){
  const delta=replacement.length-(end-start);
  for(const [id,p] of parts){if(p.start<0)continue;if(p.end<=start)continue;if(p.start>=end){p.start+=delta;p.end+=delta;continue}
@@ -1085,7 +1105,7 @@ function mkCandidateReplace(start,end,text){
 }
 function mkCandidateCleanStart(){const memo=$('memo');if(!memo.value.startsWith(' '))return;const next=[...mkCandidateParts.values()].find(p=>p.owned&&p.prefix&&p.start===1);if(next){mkCandidateReplace(0,1,'');next.prefix=false}}
 function mkCandidateToggleWord(id){
- mkCandidateSync();const w=mkMemoData.words.find(w=>w.id===id);if(!w)return;const memo=$('memo'),part=mkCandidateParts.get(id);
+ mkMemoUndo=null;mkCandidateSync();const w=mkMemoData.words.find(w=>w.id===id);if(!w)return;const memo=$('memo'),part=mkCandidateParts.get(id);
  if(part){mkCandidateParts.delete(id);if(part.owned&&memo.value.slice(part.start,part.end)===part.text){const start=part.prefix&&memo.value[part.start-1]===' '?part.start-1:part.start;mkCandidateReplace(start,part.end,'');mkCandidateCleanStart()}}
  else{
   // Reuse an exact, standalone manually entered word without claiming its text.
@@ -1093,11 +1113,11 @@ function mkCandidateToggleWord(id){
   if(at>=0)mkCandidateParts.set(id,{start:at,end:at+w.text.length,text:w.text,owned:false,prefix:false});
   else{const prefix=!!memo.value&&!/\s$/.test(memo.value),start=memo.value.length+(prefix?1:0);mkCandidateReplace(memo.value.length,memo.value.length,(prefix?' ':'')+w.text);mkCandidateParts.set(id,{start,end:start+w.text.length,text:w.text,owned:true,prefix})}
  }
- mkCandidatePaint();mkRenderEventSuggestion();
+ mkCandidatePaint();mkRenderEventSuggestion();mkMemoClearPaint();if(!part)mkMemoShowEnd();
 }
-function mkCandidateReset(){mkCandidateParts.clear();mkCandidatePrevious=$('memo').value;mkCandidateBefore=null;mkCandidateOpen=false;mkCandidateTab='';mkCandidateCategory='';mkCandidateGesture=null;mkCandidateIgnoreClick=0;mkCandidateRender()}
+function mkCandidateReset(){mkMemoUndo=null;mkMemoClearPaint();mkCandidateParts.clear();mkCandidatePrevious=$('memo').value;mkCandidateBefore=null;mkCandidateOpen=false;mkCandidateTab='';mkCandidateCategory='';mkCandidateGesture=null;mkCandidateIgnoreClick=0;mkCandidateRender()}
 $('memo').addEventListener('beforeinput',()=>{mkCandidateBefore={value:$('memo').value,start:$('memo').selectionStart,end:$('memo').selectionEnd}});
-$('memo').addEventListener('input',()=>{mkCandidateSync();mkCandidatePaint()});
+$('memo').addEventListener('input',()=>{mkMemoUndo=null;mkCandidateSync();mkCandidatePaint();mkMemoClearPaint()});
 const mkCandidateArea=$('mkCandidateWords');
 mkCandidateArea.addEventListener('pointerdown',e=>{if(!e.isPrimary||e.button!==0)return;mkCandidateGesture={id:e.pointerId,x:e.clientX,y:e.clientY,axis:'',dx:0,moved:false};});
 mkCandidateArea.addEventListener('pointermove',e=>{const g=mkCandidateGesture;if(!g||g.id!==e.pointerId)return;const dx=e.clientX-g.x,dy=e.clientY-g.y;g.dx=dx;if(Math.hypot(dx,dy)>9)g.moved=true;if(!g.axis&&Math.max(Math.abs(dx),Math.abs(dy))>12)g.axis=Math.abs(dx)>Math.abs(dy)*1.3?'x':'y';if(g.axis==='x'){e.preventDefault();if(!mkCandidateArea.hasPointerCapture(e.pointerId))mkCandidateArea.setPointerCapture(e.pointerId)}});

@@ -796,3 +796,9 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-candidate-controls .mk-candidate-toggle{width:auto;flex:none}
 #mkCandidateToggle{margin-left:auto;text-align:right}
 #mkCandidateManage[hidden]{display:none}
+
+/* #85 Memo input helpers */
+#mkCandidateManage{margin-left:1em}
+.mk-memo-input-heading{display:flex;align-items:center;justify-content:space-between}
+#mkMemoClear{font-size:12px;font-weight:400;color:var(--muted);background:transparent;padding:3px 2px}
+#mkMemoClear:disabled{opacity:.4}
