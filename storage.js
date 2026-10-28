@@ -15,7 +15,7 @@ const MKStorage=(()=>{
   }
   async function load(){const db=await open();return new Promise((resolve,reject)=>{
     const req=db.transaction(STORE,'readonly').objectStore(STORE).get(KEY);
-    req.onsuccess=()=>resolve(req.result?MKMigrations.upgrade(req.result):null);
+    req.onsuccess=()=>{try{resolve(req.result?MKMigrations.upgrade(req.result):null)}catch(e){reject(e)}};
     req.onerror=()=>reject(req.error);
   })}
   let queue=Promise.resolve();

@@ -1,6 +1,6 @@
 /* Step2 DRAFT: versioned envelope; future migrations belong here. */
 const MKMigrations={
-  currentVersion:1,
+  currentVersion:2,
   renameCategories(data){
     const aliases={'化粧品・ボディケア・ネイル':'化粧品・ケア品','化粧品・ボディケア品':'化粧品・ケア品','化粧品・ボディケア':'化粧品・ケア品','服・靴・バッグ・アクセサリー':'服・靴・小物'};
     const name=x=>aliases[x]||x;
@@ -14,8 +14,14 @@ const MKMigrations={
   },
   upgrade(envelope){
     if(!envelope||typeof envelope!=='object'||!Number.isInteger(envelope.schemaVersion))throw new Error('Unversioned database');
-    if(envelope.schemaVersion!==this.currentVersion)throw new Error('Unsupported data version: '+envelope.schemaVersion);
+    if(![1,this.currentVersion].includes(envelope.schemaVersion))throw new Error('Unsupported data version: '+envelope.schemaVersion);
     if(!envelope.data||typeof envelope.data!=='object')throw new Error('Invalid database payload');
-    return envelope;
+    const result=structuredClone(envelope);
+    if(result.schemaVersion===1){
+      if(result.data.mkSettings!==undefined)throw Error('旧形式に未知の設定があります。');
+      result.data.mkSettings=mkSeedSettings();result.schemaVersion=2;
+    }
+    mkValidateStoredSettings(result.data);
+    return result;
   }
 };
