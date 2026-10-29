@@ -54,20 +54,21 @@
       const data = structuredClone(mkState());
       validate(data);
       await MKStorage.save(data);
+      const d = new Date();
       const payload = {
         format: FORMAT,
         backupVersion: 1,
         schemaVersion: MKMigrations.currentVersion,
-        exportedAt: new Date().toISOString(),
+        exportedAt: d.toISOString(),
         data
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      const d = new Date();
       const date = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+      const time = [d.getHours(), d.getMinutes(), d.getSeconds()].map(n => String(n).padStart(2, '0')).join('');
       a.href = url;
-      a.download = `money-keeper-test-backup-${date}.json`;
+      a.download = `MK_${date}_${time}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
