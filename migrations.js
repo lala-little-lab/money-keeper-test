@@ -14,13 +14,10 @@ const MKMigrations={
   },
   upgrade(envelope){
     if(!envelope||typeof envelope!=='object'||!Number.isInteger(envelope.schemaVersion))throw new Error('Unversioned database');
-    if(![1,this.currentVersion].includes(envelope.schemaVersion))throw new Error('Unsupported data version: '+envelope.schemaVersion);
-    if(!envelope.data||typeof envelope.data!=='object')throw new Error('Invalid database payload');
+    if(envelope.schemaVersion===1)throw Error('この旧形式には口座・支払方法の設定がありません。#89以降で保存した設定入りバックアップを選んでください。');
+    if(envelope.schemaVersion!==this.currentVersion)throw Error('対応していないデータ形式です。');
+    if(!envelope.data||typeof envelope.data!=='object'||Array.isArray(envelope.data))throw Error('Invalid database payload');
     const result=structuredClone(envelope);
-    if(result.schemaVersion===1){
-      if(result.data.mkSettings!==undefined)throw Error('旧形式に未知の設定があります。');
-      result.data.mkSettings=mkSeedSettings();result.schemaVersion=2;
-    }
     mkValidateStoredSettings(result.data);
     return result;
   }

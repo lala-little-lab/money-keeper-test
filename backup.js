@@ -43,8 +43,8 @@
     return data;
   }
 
-  function checkStorage() {
-    if (typeof mkStorageReady === 'undefined' || !mkStorageReady) throw Error('ブラウザ保存が利用できません。');
+  function checkStorage(forImport = false) {
+    if (typeof mkStorageReady === 'undefined' || !(forImport ? mkCanRestore : mkStorageReady)) throw Error('ブラウザ保存が利用できません。');
     if (typeof mkState !== 'function' || typeof MKStorage === 'undefined' || typeof MKMigrations === 'undefined') throw Error('保存機能が見つかりません。');
   }
 
@@ -80,10 +80,11 @@
     }
   }
 
+  let restoring=false;
   async function importBackup(file) {
-    if (!file) return;
+    if (!file||restoring) return;
     try {
-      checkStorage();
+      checkStorage(true);
       if (file.size > MAX_BYTES) throw Error('ファイルが大きすぎます（10MBまで）。');
       const payload = JSON.parse(await file.text());
       if (payload?.format !== FORMAT || payload.backupVersion !== 1) throw Error('Money Keeperの対応バックアップではありません。');
@@ -103,7 +104,13 @@
   clearTimeout(mkSaveTimer);
   mkSaveTimer = null;
 }
-      await MKStorage.save(structuredClone(data));
+      const readyBefore=mkStorageReady;mkStorageReady=false;restoring=true;
+      document.getElementById('mk-import').disabled=true;
+      const locked=[document.querySelector('.app'),document.querySelector('.bottom')].filter(Boolean);
+      locked.forEach(el=>el.inert=true);
+      try{await MKStorage.save(structuredClone(data))}
+      catch(e){mkStorageReady=readyBefore;throw e}
+      finally{locked.forEach(el=>el.inert=false);restoring=false;document.getElementById('mk-import').disabled=!mkCanRestore;}
       status('復元データを保存しました。再読み込みします。');
       location.reload();
     } catch (e) {
@@ -113,7 +120,8 @@
   }
 
   function mount() {
-    const other = document.querySelector('#other section');
+    if(!mkStorageReady&&!mkSetupMode)return;
+    const other = mkSetupMode ? document.getElementById('mkSetupBackup') : document.querySelector('#other section');
     if (!other || document.getElementById('mk-backup-card')) return;
     const card = document.createElement('div');
     card.id = 'mk-backup-card';
@@ -129,6 +137,7 @@
       <input id="mk-import-file" type="file" accept=".json,application/json" style="display:none">
       <div id="mk-backup-status" class="small" role="status" aria-live="polite" style="margin-top:10px"></div>
       <div class="small" style="margin-top:8px">⚠️ 実データ入力禁止。JSONには記録内容がそのまま入るため、公開GitHubにはアップロードしないでね。</div>`;
+    if(mkSetupMode){card.querySelector('#mk-export').hidden=true;card.querySelector('#mk-import').disabled=!mkCanRestore;}
     other.appendChild(card);
     card.querySelector('#mk-export').addEventListener('click', exportBackup);
     const fileInput = card.querySelector('#mk-import-file');
@@ -139,6 +148,7 @@
       importBackup(file);
     });
   }
+  window.mkMountBackup=mount;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else mount();
 })();

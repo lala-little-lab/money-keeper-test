@@ -802,3 +802,9 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-memo-input-heading{display:flex;align-items:center;justify-content:space-between}
 #mkMemoClear{font-size:12px;font-weight:400;color:var(--muted);background:transparent;padding:3px 2px}
 #mkMemoClear:disabled{opacity:.4}
+
+/* #91: normal screens stay unavailable until saved settings pass validation. */
+#mkSetupGate{display:none;max-width:760px;margin:0 auto;padding:18px 14px}
+.mk-settings-pending #mkSetupGate{display:block}
+.mk-settings-pending .app,.mk-settings-pending .bottom{display:none!important}
+#mkSetupMessage{font-size:14px;line-height:1.7}

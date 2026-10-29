@@ -28,5 +28,5 @@ const MKStorage=(()=>{
     })});
     return queue;
   }
-  return {load:async()=>{const envelope=await load();return envelope?.data??null},save};
+  return {available:async()=>{await open();return true},load:async()=>{const envelope=await load();return envelope?.data??null},save};
 })();
