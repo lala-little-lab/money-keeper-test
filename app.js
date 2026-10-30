@@ -76,6 +76,7 @@ function nav(id,b){
  mkDisplayPage(id,b);
 }
 window.addEventListener('popstate',function(event){
+ if(mkSettingsHandlePop(event))return;
  if(event.state?.memo){mkMemoOrigin=event.state.memo.origin||'other';mkMemoHide();mkMemoView=event.state.memo.view||'words';mkMemoScope=event.state.memo.scope||'';if(mkMemoView==='groups'&&mkMemoScope&&!mkMemoData.groups.some(g=>g.id===mkMemoScope))mkMemoScope='';mkMemoRender();mkDisplayPage('memoManager',mkNavigationButton('memoManager'));if(event.state.memo.modal)mkMemoHistory(true);return;}
  if(document.querySelector('.page.active')?.id==='memoManager')mkMemoHide();
  const id=event.state&&event.state.mkPage;
@@ -350,7 +351,7 @@ function selectChargeTarget(k,b){chargeTarget=k;chargeSource=!mkHiddenPay(charge
 function selectChargeSource(k,b){chargeSource=k;renderCharge()}
 function changeChargeDefault(){if(!chargeTarget)return;let opts=mkSettings.layouts.charge.flat().filter(k=>!mkHiddenPay(k)).map(k=>[k,chargeSourceLabel(k)]).map(x=>({value:x[0],label:x[1]}));openPicker('いつものチャージ元',opts,(v,l)=>{chargeDefaults[chargeTarget]=v;chargeSource=v;renderCharge();mkQueueSave()})}
 function updateChargeHint(){if(!chargeTarget){$('chargeDefaultHint').textContent='チャージ先を選ぶと、いつものチャージ元を自動選択します。';return}let d=chargeDefaults[chargeTarget];$('chargeDefaultHint').innerHTML='いつものチャージ元：'+safeHtml(chargeSourceLabel(d))+(mkHiddenPay(d)?'（非表示：今回のチャージ元を選んでください）':'')+' <button type="button" class="inline-setting" onclick="changeChargeDefault()">設定変更</button>'}
-function pickDiscount(v,b){discount=v;document.querySelectorAll('#discountBtns .mini').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('customDiscount').classList.toggle('hidden',v!=='custom')}function disc(){return discount==='custom'?Number($('customDiscount').value||0):Number(discount||0)}function acct(k){return Object.hasOwn(mkSettings.balanceRoutes,k)?mkSettings.balanceRoutes[k]:null}function move(d,text,delta,k,refId=''){if(!k)return;balances[k].v+=delta;cashbook.unshift({date:d,text,delta,refId})}
+function pickDiscount(v,b){discount=v;document.querySelectorAll('#discountBtns .mini').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('customDiscount').classList.toggle('hidden',v!=='custom')}function disc(){return discount==='custom'?Number($('customDiscount').value||0):Number(discount||0)}function acct(k,t){return Object.hasOwn(mkSettings.balanceRoutes,k)&&mkTracksAccount(t,k)?mkSettings.balanceRoutes[k]:null}function move(d,text,delta,k,refId=''){if(!k)return;balances[k].v+=delta;cashbook.unshift({date:d,text,delta,refId})}
 function setTransferFeeSide(side,b){transferFeeSide=side;document.querySelectorAll('#transferFeePayer .mini').forEach(x=>x.classList.remove('active'));if(b)b.classList.add('active')}
 function toggleTransferFeePayer(){let fee=moneyNum($('transferFee').value);$('transferFeePayer').classList.toggle('hidden',fee<=0)}
 function mkValidRecordDate(value){
@@ -385,8 +386,8 @@ function mkPointReviewNotice(){
  let el=$('mkPointReviewNotice');if(!el){el=document.createElement('div');el.id='mkPointReviewNotice';el.className='small';$('analysisMonthLabel').parentElement.after(el)}
  el.hidden=!count;el.textContent=count?'要確認：過去の立替 '+count+'件でポイントが自分の分を超えています。その記録は従来の自分の分で暫定集計しています。履歴で確認してください。':'';
 }
-function reverseTxEffect(t){let a=Number(t.amount||0);if(t.type==='expense'&&acct(t.payment==='rakutenpay'?t.rakutenPaySource:t.payment))balances[t.payment==='rakutenpay'?t.rakutenPaySource:t.payment].v+=Number(t.paid??a)+Number(t.fee||0);else if(t.type==='income'&&acct(t.payment))balances[t.payment].v-=a;else if(t.type==='transfer'){let fee=Number(t.fee||0),side=t.feeSide||'from';if(side==='to'){if(balances[t.from])balances[t.from].v+=a;if(balances[t.to])balances[t.to].v-=a-fee}else{if(balances[t.from])balances[t.from].v+=a+fee;if(balances[t.to])balances[t.to].v-=a}}else if(t.type==='charge'){if(balances[t.target])balances[t.target].v-=a;if(acct(t.source))balances[t.source].v+=a}else if(t.type==='lend'&&acct(mkTxPayAccount(t)))balances[mkTxPayAccount(t)].v+=mkTxPaid(t);else if(t.type==='repay'&&acct(t.payment))balances[t.payment].v+=a+Number(t.fee||0);else if(t.type==='receive'&&acct(t.payment))balances[t.payment].v-=a-Number(t.fee||0);else if(t.type==='loanBorrow'&&acct(t.payment))balances[t.payment].v-=a;else if(t.type==='loanLend'&&acct(t.payment))balances[t.payment].v+=a;cashbook=cashbook.filter(x=>x.refId!==t.id)}
-function applyTxEffect(t){let a=Number(t.amount||0);if(t.type==='expense'&&acct(t.payment==='rakutenpay'?t.rakutenPaySource:t.payment))move(t.date,t.category+(t.memo?'・'+t.memo:''),-(Number(t.paid??a)+Number(t.fee||0)),t.payment==='rakutenpay'?t.rakutenPaySource:t.payment,t.id);else if(t.type==='income'&&acct(t.payment))move(t.date,'入金'+(t.memo?'・'+t.memo:''),a,t.payment,t.id);else if(t.type==='transfer'){let fee=Number(t.fee||0),side=t.feeSide||'from';if(side==='to'){if(balances[t.from])balances[t.from].v-=a;if(balances[t.to])balances[t.to].v+=a-fee}else{if(balances[t.from])balances[t.from].v-=a+fee;if(balances[t.to])balances[t.to].v+=a}if(fee>0)cashbook.unshift({date:t.date,text:'振込手数料',delta:-fee,refId:t.id})}else if(t.type==='charge'){if(balances[t.target])balances[t.target].v+=a;if(acct(t.source))balances[t.source].v-=a;else cashbook.unshift({date:t.date,text:(pays.find(x=>x[0]===t.source)||['',t.source])[1]+'→'+(balances[t.target]?.name||t.target)+'チャージ',delta:a,refId:t.id})}else if(t.type==='lend'&&acct(mkTxPayAccount(t)))move(t.date,t.category+'（'+t.person+'分を立替）',-mkTxPaid(t),mkTxPayAccount(t),t.id);else if(t.type==='repay'&&acct(t.payment))move(t.date,t.person+'へ返済',-(a+Number(t.fee||0)),t.payment,t.id);else if(t.type==='receive'&&acct(t.payment))move(t.date,t.person+'から返済',a-Number(t.fee||0),t.payment,t.id);else if(t.type==='loanBorrow'&&acct(t.payment))move(t.date,t.person+'から借入',a,t.payment,t.id);else if(t.type==='loanLend'&&acct(t.payment))move(t.date,t.person+'へ貸付',-a,t.payment,t.id)}
+function reverseTxEffect(t){let a=Number(t.amount||0);if(t.type==='expense'&&acct(t.payment==='rakutenpay'?t.rakutenPaySource:t.payment,t))balances[t.payment==='rakutenpay'?t.rakutenPaySource:t.payment].v+=Number(t.paid??a)+Number(t.fee||0);else if(t.type==='income'&&acct(t.payment,t))balances[t.payment].v-=a;else if(t.type==='transfer'){let fee=Number(t.fee||0),side=t.feeSide||'from';if(side==='to'){if(balances[t.from]&&mkTracksAccount(t,t.from))balances[t.from].v+=a;if(balances[t.to]&&mkTracksAccount(t,t.to))balances[t.to].v-=a-fee}else{if(balances[t.from]&&mkTracksAccount(t,t.from))balances[t.from].v+=a+fee;if(balances[t.to]&&mkTracksAccount(t,t.to))balances[t.to].v-=a}}else if(t.type==='charge'){if(balances[t.target]&&mkTracksAccount(t,t.target))balances[t.target].v-=a;if(acct(t.source,t))balances[t.source].v+=a}else if(t.type==='lend'&&acct(mkTxPayAccount(t),t))balances[mkTxPayAccount(t)].v+=mkTxPaid(t);else if(t.type==='repay'&&acct(t.payment,t))balances[t.payment].v+=a+Number(t.fee||0);else if(t.type==='receive'&&acct(t.payment,t))balances[t.payment].v-=a-Number(t.fee||0);else if(t.type==='loanBorrow'&&acct(t.payment,t))balances[t.payment].v-=a;else if(t.type==='loanLend'&&acct(t.payment,t))balances[t.payment].v+=a;cashbook=cashbook.filter(x=>x.refId!==t.id)}
+function applyTxEffect(t){let a=Number(t.amount||0);if(t.type==='expense'&&acct(t.payment==='rakutenpay'?t.rakutenPaySource:t.payment,t))move(t.date,t.category+(t.memo?'・'+t.memo:''),-(Number(t.paid??a)+Number(t.fee||0)),t.payment==='rakutenpay'?t.rakutenPaySource:t.payment,t.id);else if(t.type==='income'&&acct(t.payment,t))move(t.date,'入金'+(t.memo?'・'+t.memo:''),a,t.payment,t.id);else if(t.type==='transfer'){let fee=Number(t.fee||0),side=t.feeSide||'from';if(side==='to'){if(balances[t.from]&&mkTracksAccount(t,t.from))balances[t.from].v-=a;if(balances[t.to]&&mkTracksAccount(t,t.to))balances[t.to].v+=a-fee}else{if(balances[t.from]&&mkTracksAccount(t,t.from))balances[t.from].v-=a+fee;if(balances[t.to]&&mkTracksAccount(t,t.to))balances[t.to].v+=a}if(fee>0)cashbook.unshift({date:t.date,text:'振込手数料',delta:-fee,refId:t.id})}else if(t.type==='charge'){if(balances[t.target]&&mkTracksAccount(t,t.target))balances[t.target].v+=a;if(acct(t.source,t))balances[t.source].v-=a;else cashbook.unshift({date:t.date,text:(pays.find(x=>x[0]===t.source)||['',t.source])[1]+'→'+(balances[t.target]?.name||t.target)+'チャージ',delta:a,refId:t.id})}else if(t.type==='lend'&&acct(mkTxPayAccount(t),t))move(t.date,t.category+'（'+t.person+'分を立替）',-mkTxPaid(t),mkTxPayAccount(t),t.id);else if(t.type==='repay'&&acct(t.payment,t))move(t.date,t.person+'へ返済',-(a+Number(t.fee||0)),t.payment,t.id);else if(t.type==='receive'&&acct(t.payment,t))move(t.date,t.person+'から返済',a-Number(t.fee||0),t.payment,t.id);else if(t.type==='loanBorrow'&&acct(t.payment,t))move(t.date,t.person+'から借入',a,t.payment,t.id);else if(t.type==='loanLend'&&acct(t.payment,t))move(t.date,t.person+'へ貸付',-a,t.payment,t.id)}
 function deleteHistoryRecord(id){let t=txs.find(x=>x.id===id);if(!t)return;let group=loanGroupForTx(id);if(group?.adjustmentId){alert('清算済みグループの記録は、グループ解除で清算調整を取り消してから削除してね');return;}let label=typeGroup(t)==='loan'?'この貸し借り記録':'この記録';if(!confirm(isLoanExtra(t)?'この記録外の貸し借りを削除しますか？\n貸し借り残高だけ再計算します。':label+'を削除しますか？\n\n関連する残高・カード請求予定・貸し借り残高も連動して戻します。'))return;reverseTxEffect(t);txs=txs.filter(x=>x.id!==id);renderAll()}
 function toggleHistMore(){histMoreOpen=!histMoreOpen;if($('histFilterExtra'))$('histFilterExtra').classList.toggle('hidden',!histMoreOpen);if($('histMoreBtn'))$('histMoreBtn').textContent=histMoreOpen?'閉じる':'もっと';renderHistFilterStatus()}function renderHistFilterStatus(){let n=[histPeriod,histCat,histPay,histEvent].filter(Boolean).length;let reset=$('mkHistReset');if(reset){let active=!!((histKeyword||'').trim()||histType!=='all'||histStart||histEnd||n);reset.disabled=!active;reset.classList.toggle('is-inactive',!active)}let el=$('histFilterStatus');if(!el)return;el.textContent=n?'絞り込み中 '+n+'件':'';el.classList.toggle('hidden',!n||histMoreOpen)}
 function resetHistoryFilters(){
@@ -655,6 +656,10 @@ function mkValidateSettings(c){
  const fields=['version','accounts','pays','incomePays','labels','cards','balanceRoutes','routeTokens','cardRoutes','aliases','layouts','chargeTargets','rakutenSources','installmentPays','chargeDefaults','recurringSources'];
  if(!obj(c)||c.version!==1||Object.keys(c).filter(k=>k!=='ui').sort().join('|')!==fields.sort().join('|'))fail();
  if(!list(c.accounts,1)||!c.accounts.every(x=>obj(x)&&key(x.id)&&label(x.name))||!unique(c.accounts.map(x=>x.id)))fail();
+ for(const a of c.accounts){
+  if(a.kind!==undefined&&!['bank','prepaid'].includes(a.kind))fail();
+  if(a.untrackedTxIds!==undefined&&(!Array.isArray(a.untrackedTxIds)||a.untrackedTxIds.length>100000||!unique(a.untrackedTxIds)||!a.untrackedTxIds.every(x=>typeof x==='string'&&x.length>0&&x.length<=200)))fail();
+ }
  const accounts=new Set(c.accounts.map(x=>x.id));
  function pairs(x,allowEmpty=false){if(!list(x)||!x.every(y=>Array.isArray(y)&&y.length===2&&(allowEmpty?label(y[0],true):key(y[0]))&&label(y[1]))||!unique(x.map(y=>y[0])))fail()}
  pairs(c.pays);pairs(c.incomePays);pairs(c.chargeTargets);pairs(c.rakutenSources);pairs(c.recurringSources,true);
@@ -1505,55 +1510,52 @@ function mkSettingsUI(c=mkSettings){return c?.ui||{hiddenBalances:[],hiddenPays:
 function mkHiddenBalance(k){return mkSettingsUI().hiddenBalances.includes(k)}
 function mkHiddenPay(k){return mkSettingsUI().hiddenPays.includes(k)}
 function mkSettingsOpen(){
- if(!mkStorageReady||mkSettingsBusy)return;
+ if(!mkStorageReady||mkSettingsBusy||mkSettingsDraft)return;
  mkSettingsDraft=structuredClone(mkSettings);mkSettingsDraft.ui=structuredClone(mkSettingsUI());mkSettingsView='';mkSettingsEdit=null;
- $('mkSettingsError').textContent='';$('mkSettingsModal').classList.remove('hidden');document.body.classList.add('mk-memo-modal-open');mkSettingsRender();
+ mkSettingsInitial=JSON.stringify(mkSettingsDraft);mkSettingsNewBalances={};mkSettingsBuffers={};mkSettingsAddDraft=null;mkSettingsSession='s'+Date.now()+Math.random();mkSettingsDepth=0;mkSettingsLeaving=false;
+ const page=document.querySelector('.page.active')?.id||'home';history.replaceState({...history.state,mkPage:page},'',location.href);history.pushState({mkPage:page,mkSetting:mkSettingsSession,depth:0,view:'',edit:null},'',location.href);
+ $('mkSettingsError').textContent='';$('mkSettingsModal').classList.remove('hidden');document.body.classList.add('mk-memo-modal-open');mkSettingsRender();$('mkSettingsModal').firstElementChild.scrollTop=0;
 }
-function mkSettingsCancel(){if(mkSettingsBusy)return;mkSettingsDraft=null;mkSettingsEdit=null;$('mkSettingsModal').classList.add('hidden');document.body.classList.remove('mk-memo-modal-open');$('mkSettingsError').textContent=''}
-function mkSettingsGo(view){mkSettingsView=view;mkSettingsEdit=null;$('mkSettingsError').textContent='';mkSettingsRender()}
+function mkSettingsCancel(saved=false){
+ if(mkSettingsBusy||!mkSettingsDraft)return;
+ if(!saved&&mkSettingsDirty()&&!confirm('保存していない変更を破棄して、設定を閉じますか？'))return;
+ mkSettingsLeaving=true;history.go(-(mkSettingsDepth+1));
+}
+function mkSettingsGo(view){mkSettingsNavigate(view,null,1)}
 function mkSettingsButton(text,fn,cls='ghost'){const b=document.createElement('button');b.type='button';b.className=cls;b.textContent=text;b.onclick=fn;return b}
 function mkSettingsText(text,cls='small'){const e=document.createElement('p');e.className=cls;e.textContent=text;return e}
 function mkSettingsName(k){if(k==='__more')return 'もっと見る';return mkSettingsDraft.labels[k]||mkSettingsDraft.accounts.find(x=>x.id===k)?.name||k}
 function mkSettingsRender(){
- if(!mkSettingsDraft)return;const c=mkSettingsDraft,body=$('mkSettingsBody');body.replaceChildren();$('mkSettingsSave').hidden=!!mkSettingsEdit;
- if(mkSettingsView)body.append(mkSettingsButton('← 設定一覧へ',()=>mkSettingsGo(''),'mk-settings-back'));
- if(mkSettingsEdit){mkSettingsRenderEdit(body);return}
+ if(!mkSettingsDraft)return;const c=mkSettingsDraft,body=$('mkSettingsBody');body.replaceChildren();const noSave=!!mkSettingsEdit||mkSettingsView==='cards';$('mkSettingsSave').hidden=noSave;$('mkSettingsSave').parentElement.hidden=noSave;
+ $('mkSettingsTitle').textContent=mkSettingsEdit?(mkSettingsEdit.kind==='add'?'口座・残高を追加':mkSettingsEdit.kind==='account'?'口座・残高を編集':'支払方法を編集'):({accounts:'口座・残高',pays:'支払方法',cards:'カード・引落',layouts:'ボタン配置'}[mkSettingsView]||'口座・支払方法の設定');
+ if(mkSettingsEdit){if(mkSettingsEdit.kind==='add')mkSettingsRenderAdd(body);else mkSettingsRenderEdit(body);return}
  if(!mkSettingsView){
   const grid=document.createElement('div');grid.className='mk-settings-menu';
-  for(const [id,label,sub] of [['accounts','口座・残高','名前・表示・順番'],['pays','支払方法','名前・候補の表示'],['cards','カード・引落','紐付けを確認'],['layouts','ボタン配置','順番・行ごとの個数']]){const b=mkSettingsButton(label,()=>mkSettingsGo(id));const sm=document.createElement('small');sm.textContent=sub;b.append(sm);grid.append(b)}body.append(grid,mkSettingsText('変更は最後に「保存」で反映します。キャンセルすると、変更前に戻ります。'));return;
+  for(const [id,label,sub] of [['accounts','口座・残高','名前・表示・順番'],['pays','支払方法','名前・候補の表示'],['cards','カード・引落','紐付けを確認'],['layouts','ボタン配置','順番・行ごとの個数']]){const b=mkSettingsButton(label,()=>mkSettingsGo(id));const sm=document.createElement('small');sm.textContent=sub;b.append(sm);grid.append(b)}body.append(grid);return;
  }
  if(mkSettingsView==='layouts'){mkSettingsRenderLayouts(body);return}
  if(mkSettingsView==='cards'){
-  body.append(mkSettingsText('現在の紐付けです。カードの追加・締め日・引落口座の変更は、次の段階で対応します。'));
   for(const c1 of c.cards){const row=document.createElement('div');row.className='item';const title=document.createElement('strong');title.textContent=c1.name;row.append(title,mkSettingsText('締め日：'+(c1.monthEnd?'月末':c1.closeDay+'日')+' ／ 引落日：翌月'+c1.dueDay+'日'),mkSettingsText('引落口座：'+c.accounts.find(x=>x.id===c1.accountId).name));body.append(row)}return;
  }
  const account=mkSettingsView==='accounts';
- body.append(mkSettingsText(account?'ホームで非表示にしても、手元資金の合計や引落には含まれます。':'非表示にすると新しい記録の候補から外れます。過去の履歴・請求・定期支払いは残ります。'));
- body.append(mkSettingsText('右端のつまみを長押しして並べ替え。変更後に「保存」してください。'));
+ if(account){const head=document.createElement('div');head.className='mk-settings-add-head';head.append(mkSettingsButton('＋追加',()=>{mkSettingsNavigate('accounts',{kind:'add'},2)},'outline'));body.append(head)}
  const ids=account?c.accounts.map(x=>x.id):c.ui.payOrder;
  const hidden=account?c.ui.hiddenBalances:c.ui.hiddenPays;
  const list=document.createElement('div');body.append(list);
  const details=document.createElement('details'),summary=document.createElement('summary'),hiddenList=document.createElement('div');summary.textContent='非表示の項目（'+ids.filter(k=>hidden.includes(k)).length+'）';details.append(summary,hiddenList);body.append(details);
  function move(a,b){const order=ids.slice(),ia=order.indexOf(a),ib=order.indexOf(b);if(ia<0||ib<0)return;order.splice(ib,0,order.splice(ia,1)[0]);if(account)c.accounts=order.map(k=>c.accounts.find(x=>x.id===k));else{c.ui.payOrder=order;let n=0;for(const zone of ['payment','more'])c.layouts[zone]=c.layouts[zone].map(row=>row.map(k=>k==='__more'?k:order[n++]));}mkSettingsRender()}
- for(const k of ids){const row=document.createElement('div');row.className='mk-settings-row';row.dataset.key=k;const name=document.createElement('span');name.textContent=account?c.accounts.find(x=>x.id===k).name:mkSettingsName(k);row.append(name,mkSettingsButton('編集',()=>{mkSettingsEdit={kind:account?'account':'pay',key:k};mkSettingsRender()}));mkSettingsGrip(row,k,move);(hidden.includes(k)?hiddenList:list).append(row)}
+ for(const k of ids){const row=document.createElement('div');row.className='mk-settings-row';row.dataset.key=k;const name=document.createElement('span');name.textContent=account?c.accounts.find(x=>x.id===k).name:mkSettingsName(k);row.append(name,mkSettingsButton('編集',()=>{mkSettingsNavigate(mkSettingsView,{kind:account?'account':'pay',key:k},2)}));mkSettingsGrip(row,k,move);(hidden.includes(k)?hiddenList:list).append(row)}
 }
 function mkSettingsRenderEdit(body){
- const {kind,key}=mkSettingsEdit,c=mkSettingsDraft,isAccount=kind==='account',name=isAccount?c.accounts.find(x=>x.id===key).name:c.labels[key];
- const label=document.createElement('label');label.textContent=isAccount?'口座・残高の名前':'支払方法の名前';const input=document.createElement('input');input.type='text';input.id='mkSettingsName';input.maxLength=60;input.value=name;label.append(input);body.append(label);
- const checks=[];
- function check(text,value,id){const label=document.createElement('label');label.className='mk-settings-check';const cb=document.createElement('input');cb.type='checkbox';cb.checked=value;cb.id=id;label.append(cb,document.createTextNode(text));body.append(label);return cb}
- if(isAccount)checks.push(['hiddenBalances',check('ホームの残高に表示する',!c.ui.hiddenBalances.includes(key),'mkSettingsBalanceVisible')]);
- checks.push(['hiddenPays',check('新しい記録の候補に表示する',!c.ui.hiddenPays.includes(key),'mkSettingsPayVisible')]);
- body.append(mkSettingsText('金額や紐付けは変更しません。名前の変更は、同じ項目を参照する履歴の表示にも反映されます。'));
- body.append(mkSettingsButton('編集を戻す',()=>{mkSettingsEdit=null;mkSettingsRender()}),mkSettingsButton('設定に反映',()=>{
-  const value=input.value.trim();if(!value||value.length>60||/[<>\u0000-\u001f]/.test(value)){$('mkSettingsError').textContent='名前を1〜60文字で入力してください（< > は使えません）。';return}
-  const existing=isAccount?c.accounts.map(x=>[x.id,x.name]):c.pays;
-  if(existing.some(([k,n])=>k!==key&&n===value)){$('mkSettingsError').textContent='同じ名前が登録されています。別の名前を入力してください。';return}
-  if(isAccount){c.accounts.find(x=>x.id===key).name=value;for(const card of c.cards)if(card.accountId===key)card.account=value;}
-  else{const oldNames=[c.labels[key],c.pays.find(x=>x[0]===key)?.[1]];for(const old of oldNames)if(old&&!Object.hasOwn(c.aliases,old)&&!['__proto__','constructor','prototype'].includes(old))c.aliases[old]=key;c.labels[key]=value;for(const list of [c.pays,c.incomePays,c.chargeTargets,c.rakutenSources])for(const pair of list)if(pair[0]===key)pair[1]=value;const card=c.cards.find(x=>x.id===key);if(card)card.name=value;}
-  for(const [field,cb] of checks)c.ui[field]=cb.checked?c.ui[field].filter(x=>x!==key):[...new Set([...c.ui[field],key])];
-  mkSettingsEdit=null;$('mkSettingsError').textContent='';mkSettingsRender();
- },'outline'));
+ const {kind,key}=mkSettingsEdit,c=mkSettingsDraft,isAccount=kind==='account',slot=kind+':'+key;
+ const initial={kind,key,name:isAccount?c.accounts.find(x=>x.id===key).name:c.labels[key],home:!c.ui.hiddenBalances.includes(key),pay:!c.ui.hiddenPays.includes(key)};
+ const value=mkSettingsBuffers[slot]?.value||initial;
+ function remember(){mkSettingsBuffers[slot]={initial:mkSettingsBuffers[slot]?.initial||initial,value:{kind,key,name:input.value,home:home?.checked??value.home,pay:pay.checked}}}
+ const label=document.createElement('label');label.textContent=isAccount?'口座・残高の名前':'支払方法の名前';const input=document.createElement('input');input.type='text';input.id='mkSettingsName';input.maxLength=60;input.value=value.name;input.oninput=remember;label.append(input);body.append(label);
+ function check(text,checked,id){const label=document.createElement('label');label.className='mk-settings-check';const cb=document.createElement('input');cb.type='checkbox';cb.checked=checked;cb.id=id;cb.onchange=remember;label.append(cb,document.createTextNode(text));body.append(label);return cb}
+ let home=null;if(isAccount){home=check('ホームの残高に表示する',value.home,'mkSettingsBalanceVisible');body.append(mkSettingsText('非表示でも合計・引落に含まれます。','small mk-settings-note'))}
+ const pay=check('新しい記録の候補に表示する',value.pay,'mkSettingsPayVisible');body.append(mkSettingsText('非表示でも過去の記録・請求は残ります。','small mk-settings-note'));
+ body.append(mkSettingsButton('編集を戻す',()=>{delete mkSettingsBuffers[slot];history.back()}),mkSettingsButton('設定に反映',()=>{remember();if(mkSettingsCommitBuffer(slot))history.back()},'outline'));
 }
 function mkSettingsGrip(row,key,move){
  const grip=mkSettingsButton('⠿',()=>{},'mk-settings-grip');grip.setAttribute('aria-label','長押しで並べ替え。上下キーでも移動');row.append(grip);
@@ -1569,7 +1571,6 @@ function mkSettingsGrip(row,key,move){
 }
 function mkSettingsRenderLayouts(body){
  const c=mkSettingsDraft;
- body.append(mkSettingsText('支払方法は支出・やりとりで共通です。非表示の項目も配置を保持します。プレビューは表示する項目だけを並べます。'));
  for(const [zone,title] of [['payment','支払方法：いつも表示'],['more','支払方法：もっと見る'],['income','入金先'],['charge','チャージ元']]){
   const heading=document.createElement('h3');heading.textContent=title;body.append(heading);
   const preview=document.createElement('div');preview.className='mk-settings-preview';
@@ -1592,20 +1593,102 @@ function mkSettingsPack(zone,flat,caps=mkSettingsDraft.layouts[zone].map(x=>x.le
 function mkSettingsSyncPayOrder(){mkSettingsDraft.ui.payOrder=[...mkSettingsDraft.layouts.payment.flat(),...mkSettingsDraft.layouts.more.flat()].filter(k=>k!=='__more')}
 async function mkSettingsSave(){
  if(!mkSettingsDraft||mkSettingsBusy||!mkStorageReady)return;
- const candidate=structuredClone(mkState());candidate.mkSettings=structuredClone(mkSettingsDraft);
+ for(const slot of Object.keys(mkSettingsBuffers))if(!mkSettingsCommitBuffer(slot))return;
+ if(mkSettingsAddDraft&&mkSettingsAddDirty()&&!mkSettingsAddToDraft(false))return;
+ const candidate=structuredClone(mkState());candidate.mkSettings=structuredClone(mkSettingsDraft);Object.assign(candidate.balances,mkSettingsNewBalances);candidate.chargeDefaults={...candidate.mkSettings.chargeDefaults,...candidate.chargeDefaults};
  try{mkValidateStoredSettings(candidate)}catch(e){$('mkSettingsError').textContent='設定を保存できません。名前や配置を確認してください。';return}
  mkSettingsBusy=true;clearTimeout(mkSaveTimer);mkStorageReady=false;$('mkSettingsSave').disabled=true;$('mkSettingsSave').textContent='保存中…';$('mkSettingsBody').inert=true;document.querySelector('.app').inert=true;document.querySelector('.bottom').inert=true;
  let committed=false;
  try{
   await MKStorage.save(candidate);committed=true;
-  const oldDefaults=chargeDefaults,oldRakuten=rakutenPaySource;
-  mkApplySettings(candidate.mkSettings);chargeDefaults=oldDefaults;rakutenPaySource=oldRakuten;
+  const oldRakuten=rakutenPaySource;
+  mkApplySettings(candidate.mkSettings);chargeDefaults=candidate.chargeDefaults;for(const [k,v] of Object.entries(candidate.balances))balances[k].v=v;rakutenPaySource=oldRakuten;
   // A hidden choice cannot stay invisibly selected for the next new record.
   if(mkHiddenPay(payment))payment='';if(mkHiddenPay(chargeTarget))chargeTarget='';if(mkHiddenPay(chargeSource))chargeSource='';
   if(mkHiddenPay(from)){from='';$('fromBtn').firstElementChild.textContent='選んでください'}if(mkHiddenPay(to)){to='';$('toBtn').firstElementChild.textContent='選んでください'}
   if(from)$('fromBtn').firstElementChild.textContent=balances[from]?.name||from;if(to)$('toBtn').firstElementChild.textContent=balances[to]?.name||to;
   if(mkHiddenPay(rakutenPaySource))rakutenPaySource=mkSettings.rakutenSources.find(([k])=>!mkHiddenPay(k))?.[0]||'';
-  renderAll();renderPayBtns();renderCharge();mkRefreshRakPaySource();mkStorageReady=true;mkSettingsBusy=false;mkSettingsCancel();
+  renderAll();renderPayBtns();renderCharge();mkRefreshRakPaySource();mkStorageReady=true;mkSettingsBusy=false;mkSettingsCancel(true);
  }catch(e){console.error('設定の保存失敗',e);mkStorageReady=!committed;$('mkSettingsError').textContent=committed?'設定は保存しましたが、画面を更新できませんでした。再読み込みしてください。':'保存できませんでした。画面を閉じず、もう一度保存してください。';}
  finally{mkSettingsBusy=false;$('mkSettingsSave').disabled=false;$('mkSettingsSave').textContent='保存';$('mkSettingsBody').inert=false;document.querySelector('.app').inert=false;document.querySelector('.bottom').inert=false;}
+}
+
+// #93: browser Back follows settings hierarchy; only closing discards drafts.
+let mkSettingsSession='',mkSettingsDepth=0,mkSettingsLeaving=false,mkSettingsInitial='',mkSettingsNewBalances={},mkSettingsBuffers={},mkSettingsAddDraft=null;
+function mkSettingsNavigate(view,edit,depth){
+ if(!mkSettingsDraft||mkSettingsBusy)return;
+ if(depth===2&&mkSettingsDepth===0){history.pushState({mkPage:document.querySelector('.page.active')?.id||'home',mkSetting:mkSettingsSession,depth:1,view,edit:null},'',location.href);mkSettingsDepth=1;}
+ const state={mkPage:document.querySelector('.page.active')?.id||'home',mkSetting:mkSettingsSession,depth,view,edit};
+ if(depth>mkSettingsDepth)history.pushState(state,'',location.href);else history.replaceState(state,'',location.href);
+ mkSettingsDepth=depth;mkSettingsView=view;mkSettingsEdit=edit;$('mkSettingsError').textContent='';mkSettingsRender();$('mkSettingsModal').firstElementChild.scrollTop=0;
+}
+function mkSettingsCloseNow(){
+ mkSettingsDraft=null;mkSettingsEdit=null;mkSettingsBuffers={};mkSettingsAddDraft=null;mkSettingsNewBalances={};mkSettingsLeaving=false;
+ $('mkSettingsModal').classList.add('hidden');document.body.classList.remove('mk-memo-modal-open');$('mkSettingsError').textContent='';
+}
+function mkSettingsDirty(){return !!mkSettingsDraft&&(JSON.stringify(mkSettingsDraft)!==mkSettingsInitial||Object.keys(mkSettingsNewBalances).length>0||Object.values(mkSettingsBuffers).some(x=>JSON.stringify(x.value)!==JSON.stringify(x.initial))||mkSettingsAddDirty())}
+function mkSettingsHandlePop(event){
+ const st=event.state;
+ if(!mkSettingsDraft){if(st?.mkSetting){history.replaceState({mkPage:st.mkPage||'home'},'',location.href);mkDisplayPage(st.mkPage||'home');return true}return false}
+ if(mkSettingsBusy){history.forward();return true}
+ if(st?.mkSetting===mkSettingsSession&&!mkSettingsLeaving){mkSettingsDepth=st.depth;mkSettingsView=st.view;mkSettingsEdit=st.edit;$('mkSettingsError').textContent='';mkSettingsRender();$('mkSettingsModal').firstElementChild.scrollTop=0;return true}
+ if(!mkSettingsLeaving&&mkSettingsDirty()&&!confirm('保存していない変更を破棄して、設定を閉じますか？')){history.forward();return true}
+ mkSettingsCloseNow();return false;
+}
+function mkSettingsCommitBuffer(slot){
+ const buffer=mkSettingsBuffers[slot];if(!buffer)return true;
+ const c=mkSettingsDraft,{kind,key,home,pay}=buffer.value,isAccount=kind==='account',value=buffer.value.name.trim();
+ function fail(message){mkSettingsNavigate(isAccount?'accounts':'pays',{kind,key},2);$('mkSettingsError').textContent=message;return false}
+ if(!value||value.length>60||/[<>\u0000-\u001f]/.test(value))return fail('名前を1〜60文字で入力してください（< > は使えません）。');
+ const existing=isAccount?c.accounts.map(x=>[x.id,x.name]):c.pays;if(existing.some(([k,n])=>k!==key&&n===value))return fail('同じ名前が登録されています。');
+ if(isAccount){c.accounts.find(x=>x.id===key).name=value;for(const card of c.cards)if(card.accountId===key)card.account=value;}
+ else if(c.labels[key]!==value){const oldNames=[c.labels[key],c.pays.find(x=>x[0]===key)?.[1]];for(const old of oldNames)if(old&&!Object.hasOwn(c.aliases,old)&&!['__proto__','constructor','prototype'].includes(old))c.aliases[old]=key;c.labels[key]=value;for(const list of [c.pays,c.incomePays,c.chargeTargets,c.rakutenSources])for(const pair of list)if(pair[0]===key)pair[1]=value;const card=c.cards.find(x=>x.id===key);if(card)card.name=value;}
+ for(const [field,shown] of [...(isAccount?[['hiddenBalances',home]]:[]),['hiddenPays',pay]])c.ui[field]=shown?c.ui[field].filter(x=>x!==key):[...new Set([...c.ui[field],key])];
+ delete mkSettingsBuffers[slot];$('mkSettingsError').textContent='';return true;
+}
+function mkTracksAccount(t,k){return !t||!mkSettings.accounts.find(a=>a.id===k)?.untrackedTxIds?.includes(t.id)}
+function mkSettingsEmptyAdd(){return {kind:'bank',existing:'',name:'',label:'',balance:'0',source:''}}
+function mkSettingsAddDirty(){return !!mkSettingsAddDraft&&JSON.stringify(mkSettingsAddDraft)!==JSON.stringify(mkSettingsEmptyAdd())}
+function mkSettingsEdyAvailable(){return mkSettingsDraft.pays.some(([k])=>k==='edy')&&!mkSettingsDraft.accounts.some(x=>x.id==='edy')&&!mkSettingsDraft.cardRoutes.edy}
+function mkSettingsRenderAdd(body){
+ const c=mkSettingsDraft,v=mkSettingsAddDraft||(mkSettingsAddDraft=mkSettingsEmptyAdd());
+ function field(label,id,control){const el=document.createElement('label');el.className='mk-settings-form-field';el.textContent=label;control.id=id;el.append(control);body.append(el);return control}
+ function select(label,id,options,value,change){const sel=document.createElement('select');for(const [k,n] of options)sel.add(new Option(n,k));sel.value=value;sel.onchange=()=>change(sel.value);return field(label,id,sel)}
+ select('種類','mkAccountKind',[['bank','銀行口座'],['prepaid','チャージ式電子マネー']],v.kind,x=>{v.kind=x;if(x==='bank'&&v.existing){v.existing='';v.name='';v.label=''}mkSettingsRender()});
+ if(v.kind==='prepaid'&&mkSettingsEdyAvailable())select('追加する項目','mkAccountExisting',[['','新しい電子マネー'],['edy',(c.pays.find(x=>x[0]==='edy')?.[1]||'楽天Edy')+'に残高を追加']],v.existing,x=>{v.existing=x;if(x==='edy'){v.name=c.pays.find(x=>x[0]==='edy')[1];v.label=c.labels.edy}else{v.name='';v.label=''}mkSettingsRender()});
+ function input(label,id,key,type='text'){const el=document.createElement('input');el.type='text';if(type==='money')el.inputMode=v.kind==='bank'?'decimal':'numeric';else el.maxLength=60;el.value=v[key];el.oninput=()=>v[key]=el.value;return field(label,id,el)}
+ input('名前','mkAccountName','name');input('ボタンの表示名（空欄なら名前と同じ）','mkAccountLabel','label');input('現在の残高（円）','mkAccountBalance','balance','money');
+ body.append(mkSettingsText('開始残高です。支出・収入には集計しません。','small mk-settings-note'));
+ if(v.kind==='prepaid')select('いつものチャージ元','mkAccountSource',[['','選んでください'],...c.layouts.charge.flat().filter(k=>!c.ui.hiddenPays.includes(k)).map(k=>[k,c.labels[k]||k])],v.source,x=>v.source=x);
+ if(v.existing)body.append(mkSettingsText('過去の記録はそのままに、ここから残高管理を始めます。','small mk-settings-note'));
+ body.append(mkSettingsButton('設定に追加',()=>mkSettingsAddToDraft(true),'outline'));
+}
+function mkSettingsAddToDraft(goBack){
+ const v=mkSettingsAddDraft;if(!v)return true;
+ const c=mkSettingsDraft,name=v.name.trim(),label=v.label.trim()||name,raw=v.balance.replace(/,/g,'').trim(),balance=Number(raw);
+ function fail(msg){if(mkSettingsEdit?.kind!=='add')mkSettingsNavigate('accounts',{kind:'add'},2);$('mkSettingsError').textContent=msg;return false}
+ if(!['bank','prepaid'].includes(v.kind))return fail('種類を選んでください。');
+ if(![name,label].every(x=>x.length>=1&&x.length<=60&&!/[<>\u0000-\u001f]/.test(x)))return fail('名前・表示名を1〜60文字で入力してください（< > は使えません）。');
+ if(!/^-?\d+$/.test(raw)||!Number.isSafeInteger(balance)||Math.abs(balance)>999999999||(v.kind==='prepaid'&&balance<0))return fail(v.kind==='prepaid'?'残高は0〜999,999,999円の整数で入力してください。':'残高は-999,999,999〜999,999,999円の整数で入力してください。');
+ let existing=v.existing;
+ const norm=x=>x.normalize('NFKC').replace(/\s/g,'').toLowerCase();
+ if(v.kind==='prepaid'&&mkSettingsEdyAvailable()&&[c.labels.edy,c.pays.find(x=>x[0]==='edy')[1],'楽天Edy'].some(n=>[name,label].some(x=>norm(x)===norm(n))))existing='edy';
+ if(existing&&(v.kind!=='prepaid'||existing!=='edy'||!mkSettingsEdyAvailable()))return fail('この支払方法にはすでに残高があるか、追加できません。');
+ if(c.accounts.some(x=>norm(x.name)===norm(name))||c.pays.some(([k,n])=>k!==existing&&[n,c.labels[k]].some(n=>[name,label].some(x=>norm(x)===norm(n)))))return fail('同じ名前の項目が登録されています。別の名前を入力してください。');
+ if(v.kind==='prepaid'&&(!c.layouts.charge.flat().includes(v.source)||c.ui.hiddenPays.includes(v.source)))return fail('いつものチャージ元を選んでください。');
+ if(c.accounts.length>=200||(!existing&&c.pays.length>=200))return fail('登録できる項目数の上限です。');
+ let key=existing;if(!key){do{key='acct_'+crypto.randomUUID().replace(/-/g,'')}while(c.pays.some(x=>x[0]===key)||c.accounts.some(x=>x.id===key))}
+ const oldTransactions=existing?txs.filter(t=>[t.payment,t.rakutenPaySource,t.source,t.target,t.from,t.to].some(k=>k&&canonicalPay(k)===existing)):[];
+ if(oldTransactions.some(t=>typeof t.id!=='string'||!t.id))return fail('過去の記録を識別できません。追加せず、バックアップを保管してご相談ください。');
+ const next=structuredClone(c);next.accounts.push({id:key,name,kind:v.kind,...(existing?{untrackedTxIds:[...new Set(oldTransactions.map(t=>t.id))]}:{})});next.balanceRoutes[key]=key;
+ function append(zone){if(!next.layouts[zone].flat().includes(key))next.layouts[zone].push([key])}
+ if(!existing){next.pays.push([key,label]);next.labels[key]=label;append('more');next.ui.payOrder.push(key)}else{
+  for(const old of [next.labels[key],next.pays.find(x=>x[0]===key)[1]])if(!Object.hasOwn(next.aliases,old)&&!['__proto__','constructor','prototype'].includes(old))next.aliases[old]=key;
+  next.pays.find(x=>x[0]===key)[1]=label;next.labels[key]=label;
+ }
+ if(v.kind==='bank'){next.incomePays.push([key,label]);append('income');append('charge');}
+ else{next.chargeTargets.push([key,label]);next.chargeDefaults[key]=v.source;}
+ next.ui.hiddenPays=next.ui.hiddenPays.filter(k=>k!==key);
+ try{mkValidateSettings(next)}catch(e){return fail('追加内容を確認してください。設定を保存できません。')}
+ mkSettingsDraft=next;mkSettingsNewBalances[key]=balance;mkSettingsAddDraft=null;$('mkSettingsError').textContent='';if(goBack)history.back();return true;
 }
