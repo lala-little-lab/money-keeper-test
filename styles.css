@@ -819,3 +819,10 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-settings-check{margin:12px 0 4px}.mk-settings-form-field{display:block;margin:14px 0;font-size:13px}
 .mk-settings-form-field input,.mk-settings-form-field select{display:block;margin-top:5px;width:100%;box-sizing:border-box;font-size:15px}
 .mk-settings-sheet h3{margin-top:12px}.mk-settings-sheet .mk-settings-menu{margin-bottom:0}
+
+/* #94: one common settings menu; recording controls retain their order. */
+#record #modes{flex-wrap:nowrap;align-items:center}
+#mkRecordSettings{margin-left:auto;flex:0 0 32px;width:32px;height:36px;padding:4px}
+.mk-layout-tabs{display:flex;gap:6px;margin:12px 0}.mk-layout-tabs button{flex:1;min-width:0}
+.mk-card-editor-actions{display:flex;gap:8px;margin-top:16px}
+@media(max-width:370px){#record #modes{gap:4px}#record #modes>.mode-choice{padding-left:8px;padding-right:8px}}
