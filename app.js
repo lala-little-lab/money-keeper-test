@@ -1,4 +1,4 @@
-const MK_MONEY_FIELDS=new Set(['amount','gross','mine','theirs','recAmount','newEventBudget','newEventCatAmount','wishPrice','loanExtraAmount','editExtraAmount','editGross','editMine','editOther','editAmount','moneyPromptValue','transferFee','editTransferFee','recordFee','editRecordFee']);
+const MK_MONEY_FIELDS=new Set(['mkGroupTotal','mkGroupPaid','mkGroupMine','mkGroupSettlementAmount','editTotal','editPaid','editSettlementAmount','amount','gross','mine','theirs','recAmount','newEventBudget','newEventCatAmount','wishPrice','loanExtraAmount','editExtraAmount','editGross','editMine','editOther','editAmount','moneyPromptValue','transferFee','editTransferFee','recordFee','editRecordFee']);
 let moneyPromptSave=null,moneyPromptMin=0;
 function moneyNum(value){if(typeof value==='number')return Number.isFinite(value)?value:0;const raw=String(value??'').replace(/[¥￥,，\s]/g,'').replace(/[^0-9.\-]/g,'');return Math.trunc(Number(raw))||0}
 function moneyFormatted(value){const raw=String(value??'').replace(/[−－]/g,'-');let neg=raw.trim().startsWith('-')?'-':'';let digits=raw.split('.')[0].replace(/\D/g,'');if(!digits)return neg;return neg+Number(digits).toLocaleString('ja-JP')}
@@ -1880,7 +1880,7 @@ function mkGroupModePaint(){
  $('mkGroupModeBtn').classList.toggle('hidden',mode==='loan');
  $('mkGroupTabs').classList.toggle('hidden',mode!=='group');
  $('mkGroupSwitchRow').classList.toggle('hidden',!active);
- $('mkGroupSwitchRow').querySelector('button').textContent=mode==='group'?'個人へ':'グループへ';
+ $('mkGroupSwitchRow').querySelector('.mk-group-switch').textContent=mode==='group'?'個人へ':'グループへ';
  $('loanGroups').classList.toggle('hidden',mode!=='loan');
  $('loanSections').classList.toggle('hidden',mode!=='loan');
 }
@@ -1888,7 +1888,7 @@ function mkGroupSwitch(){const m=mode==='group'?'loan':'group';setMode(m,$(m==='
 function mkGroupChooseKind(k){mkGroupKind=k;mkSplitDraft=[];mkSplitRender();updateForm()}
 function mkGroupFormPaint(){
  const root=$('mkGroupForm');if(!root)return;
- root.classList.toggle('hidden',mode!=='group');mkGroupModePaint();
+ root.classList.toggle('hidden',mode!=='group');$('mkGroupNameField').classList.toggle('hidden',mode!=='group');mkGroupModePaint();
  if(mode!=='group'){$('points').closest('.field').classList.remove('hidden');$('discountBtns').closest('.field').classList.remove('hidden');return}
  const bill=mkGroupKind==='bill',mine=moneyNum($('mkGroupMine').value),paid=moneyNum($('mkGroupPaid').value);
  $('normalAmount').classList.add('hidden');$('lendBox').classList.add('hidden');
@@ -1908,7 +1908,7 @@ function mkGroupClear(){
 }
 function mkGroupAddParticipant(row={},edit=false){
  const host=$(edit?'mkEditGroupParticipants':'mkGroupParticipants'),line=document.createElement('div');line.className='mk-group-person-row';
- for(const [key,label] of [['name','名前'],['paid','支払額'],['share','負担額']]){const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement('input');input.dataset.groupProp=key;input.setAttribute('aria-label','参加者の'+label);input.value=row[key]??'';if(key==='name')input.maxLength=60;else input.inputMode='numeric';wrap.append(input);line.append(wrap)}
+ for(const [key,label] of [['name','名前'],['paid','支払額'],['share','負担額']]){const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement('input');input.dataset.groupProp=key;input.setAttribute('aria-label','参加者の'+label);input.value=row[key]??'';if(key==='name')input.maxLength=60;else input.inputMode='numeric';wrap.append(input);if(key!=='name'){attachMoneyInput(input);formatMoneyElement(input)}line.append(wrap)}
  const remove=document.createElement('button');remove.type='button';remove.className='ghost sm';remove.textContent='×';remove.setAttribute('aria-label','参加者を削除');remove.onclick=()=>line.remove();line.append(remove);host.append(line);
 }
 function mkGroupParticipants(edit=false){return [...$(edit?'mkEditGroupParticipants':'mkGroupParticipants').children].map(line=>{const get=k=>line.querySelector('[data-group-prop="'+k+'"]').value.trim();return {name:get('name'),paid:mkGroupMoney(get('paid')),share:mkGroupMoney(get('share'))}})}
@@ -1951,14 +1951,14 @@ function mkGroupSave(){
 function mkGroupEdit(t){
  editingId=t.id;const bill=t.type==='lend';$('editRecordKind').textContent='｜'+recordTitle(t);
  const field=(label,id,value,type='text')=>`<div class="field"><label>${label}</label><input id="${id}" type="${type}" value="${safeHtml(String(value??''))}" ${type==='text'?'inputmode="'+(id==='editName'||id==='editPerson'?'text':'numeric')+'"':''}></div>`;
- let h=field('日付','editDate',t.date,'date')+field('グループ名','editName',t.groupName);
- if(bill){h+=field('会計総額（ポイント利用前）','editTotal',t.groupTotal)+`<div class="grid2">${field('自分の支払（ポイント利用前）','editPaid',t.gross)}${field('自分の負担（ポイント利用前）','editMine',t.amount)}</div><div class="field"><label>カテゴリ</label><select id="editCategory"><option value="">選んでください</option>${selectOptions(cats.map(c=>[c,c]),t.category)}</select></div>`}
+ let h='<div class="grid2">'+field('日付','editDate',t.date,'date')+field('グループ名','editName',t.groupName)+'</div>';
+ if(bill){h+=field('会計総額','editTotal',t.groupTotal)+`<div class="grid2">${field('自分が支払った額','editPaid',t.gross)}${field('自分の負担額','editMine',t.amount)}</div><div class="small mk-group-money-note">※金額はポイント利用前で入力</div><div class="field"><label>カテゴリ</label><select id="editCategory"><option value="">選んでください</option>${selectOptions(cats.map(c=>[c,c]),t.category)}</select></div>`}
  else h+=`<div class="grid2">${field('金額','editSettlementAmount',t.amount)}${field('相手','editPerson',t.person)}</div>`;
  const options=bill?pays:mkSettings.accounts.map(x=>[x.id,x.name]);
  h+=`<div class="field"><label>${t.type==='receive'?'受取先':'支払方法'}</label><select id="editPayment"><option value="">選んでください</option>${selectOptions(options,t.payment)}</select></div>`;
  if(bill)h+=`<details class="mk-edit-details"><summary>詳細設定</summary><div class="grid2">${field('ポイント使用','editPoints',t.points,'number')}${field('引落時割引（%）','editDiscount',t.discount,'number')}</div><div class="field"><label>分割回数</label><select id="editInstallments">${selectOptions([[1,'1回'],[2,'2回'],[3,'3回'],[6,'6回']],t.installments)}</select></div><div class="field"><label>楽天Payの支払元</label><select id="editRakPaySource">${selectOptions(mkSettings.rakutenSources,t.rakutenPaySource||'')}</select></div><div class="field"><label>特別費イベント</label><select id="editEvent"><option value="">なし</option>${selectOptions([...new Set([...eventsData.map(e=>e.name),t.eventTag].filter(Boolean))].map(n=>[n,n]),t.eventTag)}</select></div><div id="mkEditGroupParticipants"></div><button type="button" class="outline sm" onclick="mkGroupAddParticipant({},true)">＋ 参加者</button></details>`;
  h+=`<div class="field"><label>店名・メモ</label><input id="editMemo" value="${safeHtml(t.memo||'')}"></div>`;
- $('editBody').innerHTML=h;if(bill){t.groupParticipants.forEach(r=>mkGroupAddParticipant(r,true));mkSplitSetupEdit(t)}
+ $('editBody').innerHTML=h;initMoneyInputs();refreshMoneyInputs();if(bill){t.groupParticipants.forEach(r=>mkGroupAddParticipant(r,true));mkSplitSetupEdit(t)}
  $('editError').textContent='';$('editModal').classList.remove('hidden');
 }
 function mkGroupSaveEdit(original){
@@ -1978,11 +1978,15 @@ function mkGroupLoanPaint(){
  $('loanPersonTabs').classList.toggle('hidden',mkGroupLoanView);if(!mkGroupLoanView)return;
  const groups=mkGroupList();$('loanSummary').innerHTML='';
  if(!groups.length){$('loanSummary').textContent='まだグループの記録はありません。';return}
- for(const g of groups){const card=document.createElement('div');card.className='card';const head=document.createElement('button');head.type='button';head.className='mk-group-card-head';head.setAttribute('aria-expanded',String(mkGroupExpanded===g.id));head.textContent=g.name+'　'+mkGroupBalanceText(g.net)+'　'+(mkGroupExpanded===g.id?'▲':'▼');head.onclick=()=>{mkGroupExpanded=mkGroupExpanded===g.id?'':g.id;renderLoans()};card.append(head);
- if(mkGroupExpanded===g.id){const actions=document.createElement('div');actions.className='choice-row';for(const [kind,title] of [['bill','会計を記録'],['receive','受け取った'],['pay','支払った']]){const b=document.createElement('button');b.type='button';b.className='outline sm';b.textContent=title;b.onclick=()=>{nav('record',null);setMode('group',$('mkGroupModeBtn'));mkGroupChooseKind(kind);$('mkGroupName').value=g.name};actions.append(b)}card.append(actions);
- for(const t of g.rows){const row=document.createElement('div');row.className='item';const text=document.createElement('div');text.textContent=t.date+'・'+recordTitle(t)+' '+yen(txAmount(t));const meta=document.createElement('div');meta.className='small';meta.textContent=recordMeta(t);row.append(text,meta);
- if(t.groupParticipants?.length){const names=document.createElement('div');names.className='small';names.textContent=t.groupParticipants.map(r=>r.name+'：支払 '+yen(r.paid)+'／負担 '+yen(r.share)).join('・');row.append(names)}
- const edit=document.createElement('button');edit.type='button';edit.className='ghost sm';edit.textContent='編集';edit.onclick=()=>editRecord(t.id);const del=document.createElement('button');del.type='button';del.className='ghost sm danger';del.textContent='削除';del.onclick=()=>deleteHistoryRecord(t.id);row.append(edit,del);card.append(row)}}$('loanSummary').append(card)}
+ for(const g of groups){const card=document.createElement('div');card.className='card mk-payment-group-card';const head=document.createElement('button');head.type='button';head.className='mk-group-card-head';head.setAttribute('aria-expanded',String(mkGroupExpanded===g.id));head.innerHTML='<span><strong class="mk-payment-group-name">'+safeHtml(g.name)+'</strong><span class="mk-payment-group-balance">'+safeHtml(mkGroupBalanceText(g.net))+'</span></span><span class="loan-card-arrow">'+(mkGroupExpanded===g.id?'▲':'▼')+'</span>';head.onclick=()=>{mkGroupExpanded=mkGroupExpanded===g.id?'':g.id;renderLoans()};card.append(head);
+ if(mkGroupExpanded===g.id){const actions=document.createElement('div');actions.className='choice-row mk-payment-group-actions';for(const [kind,title] of [['bill','会計を記録'],['receive','受け取った'],['pay','支払った']]){const b=document.createElement('button');b.type='button';b.className='mk-loan-todo-btn';b.textContent=title;b.onclick=()=>{nav('record',null);setMode('group',$('mkGroupModeBtn'));mkGroupChooseKind(kind);$('mkGroupName').value=g.name};actions.append(b)}card.append(actions);
+ const heading=document.createElement('div');heading.className='loan-history-head';heading.innerHTML='<span class="loan-history-title">グループの履歴</span>';card.append(heading);
+ for(const t of g.rows){const row=document.createElement('div');row.className='loan-record';
+ const top=document.createElement('div');top.className='loan-record-top';const title=document.createElement('span');title.className='loan-record-kind';title.textContent=recordTitle(t);const amount=document.createElement('span');amount.className='loan-record-amt';amount.textContent=yen(txAmount(t));top.append(title,amount);
+ const sub=document.createElement('div');sub.className='loan-record-sub';const meta=document.createElement('span');meta.className='loan-record-meta';meta.textContent=t.date+'・'+recordMeta(t);sub.append(meta);
+ const actions=document.createElement('span');actions.className='loan-record-actions';const edit=document.createElement('button');edit.type='button';edit.className='ghost sm';edit.textContent='編集';edit.onclick=()=>editRecord(t.id);const del=document.createElement('button');del.type='button';del.className='ghost sm danger';del.textContent='削除';del.onclick=()=>deleteHistoryRecord(t.id);actions.append(edit,del);sub.append(actions);row.append(top,sub);
+ if(t.groupParticipants?.length){const names=document.createElement('div');names.className='loan-record-note';names.textContent=t.groupParticipants.map(r=>r.name+'：支払 '+yen(r.paid)+'／負担 '+yen(r.share)).join('・');row.append(names)}
+ card.append(row)}}$('loanSummary').append(card)}
 }
 // New numeric fields update visibility and split calculations without erasing input.
 for(const id of ['mkGroupMine','mkGroupPaid'])$(id).addEventListener('input',()=>{mkGroupFormPaint();mkSplitRefresh();mkCandidateRender()});

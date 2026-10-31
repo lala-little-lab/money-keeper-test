@@ -850,3 +850,24 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-group-card-head{display:block;width:100%;background:none;border:0;text-align:left;padding:0;font-size:16px;color:#765968;overflow-wrap:anywhere}
 #mkGroupLoanTabs{margin:12px 0}
 #mkGroupForm .field label{font-size:12px}
+
+/* #98: compact group entry and loan-history alignment. */
+#mkGroupSwitchRow{align-items:center;gap:8px}
+#mkGroupSwitchRow .mk-group-switch{margin-left:auto;flex:none;white-space:nowrap}
+#mkGroupTabs{flex:0 1 auto;flex-wrap:nowrap;min-width:0;margin:0}
+#mkGroupTabs .mini{flex:none;white-space:nowrap}
+#recordTopGrid:has(#mkGroupNameField:not(.hidden)){grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+#mkGroupNameField{min-width:0}
+.mk-group-money-note{margin:0 0 12px;font-size:11px}
+.mk-category-heading .mk-split-add{padding:3px 7px;min-height:24px;border:0;background:#f3f2f3;border-radius:7px;font-size:11px;font-weight:400}
+.mk-group-person-row .money-input.mk-money-input .money-prefix{font-size:12px;padding-left:5px}
+.mk-group-person-row .money-input.mk-money-input input{font-size:13px!important;padding-left:3px!important}
+.mk-group-card-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px}
+.mk-payment-group-name{display:block;font-size:16px;color:var(--text,#292929)}
+.mk-payment-group-balance{display:block;font-size:15px;font-weight:700;margin-top:4px}
+.mk-payment-group-actions{gap:6px;margin:0 0 12px;flex-wrap:wrap}
+.mk-payment-group-actions .mk-loan-todo-btn{max-width:none;font-size:11px;font-weight:400;padding:5px 7px;background:#fbedf2;color:#a45272;border:1px solid #e7b9c9;border-radius:9px}
+.mk-payment-group-card .loan-record-actions{margin-left:auto}
+.mk-payment-group-card .loan-record-actions button{font-weight:400}
+.mk-payment-group-card .loan-record-amt{color:#b86686}
+@media(max-width:360px){#mkGroupSwitchRow{gap:5px}#mkGroupTabs{gap:4px}#mkGroupTabs .mini{padding:6px 7px}#mkGroupSwitchRow .mk-group-switch{padding:5px 7px;font-size:11px}}
