@@ -826,3 +826,9 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-layout-tabs{display:flex;gap:6px;margin:12px 0}.mk-layout-tabs button{flex:1;min-width:0}
 .mk-card-editor-actions{display:flex;gap:8px;margin-top:16px}
 @media(max-width:370px){#record #modes{gap:4px}#record #modes>.mode-choice{padding-left:8px;padding-right:8px}}
+
+/* #95 category breakdowns */
+.mk-split-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) 34px;gap:7px;align-items:start;margin-top:9px}
+.mk-split-row select,.mk-split-row input{width:100%;min-width:0;font-size:14px;padding:10px 8px;box-sizing:border-box}
+.mk-split-money{min-width:0}.mk-split-money .small{display:block;font-size:11px;margin-top:3px;line-height:1.5}
+.mk-split-row button{padding:9px 0;min-width:0}.mk-split-add{margin-top:8px}.mk-split-error{color:#ac414e}
