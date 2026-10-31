@@ -832,3 +832,21 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-split-row select,.mk-split-row input{width:100%;min-width:0;font-size:14px;padding:10px 8px;box-sizing:border-box}
 .mk-split-money{min-width:0}.mk-split-money .small{display:block;font-size:11px;margin-top:3px;line-height:1.5}
 .mk-split-row button{padding:9px 0;min-width:0}.mk-split-add{margin-top:8px}.mk-split-error{color:#ac414e}
+/* #96: compact category action and group accounting controls. */
+.mk-category-heading{display:flex!important;align-items:center;gap:10px;flex-wrap:wrap}
+.mk-category-heading .mk-split-add{width:auto;margin:0;padding:4px 9px;min-height:30px;border:1px solid #d9d1d6;border-radius:8px;background:#fff;color:#7b7277;font-size:12px;font-weight:400;line-height:1.3}
+#mkGroupSwitchRow{display:flex;justify-content:flex-end;margin:-2px 0 8px;min-height:30px}
+#mkGroupSwitchRow.hidden{display:none}
+.mk-group-switch{background:white;border:1px solid #ddd5da;color:#81767c;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:400;min-height:30px}
+#record:has(#loanGroups:not(.hidden)) #mkGroupSwitchRow{float:right;margin-top:0;position:relative;z-index:1}
+#record .interaction-row:has(#mkGroupTabs:not(.hidden)) .mk-record-reset{order:5}
+#record .interaction-row:has(#mkGroupTabs:not(.hidden)) #mkGroupModeBtn{order:0}
+.mk-group-person-row{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr) 30px;gap:6px;align-items:end;margin:8px 0}
+.mk-group-person-row label{font-size:11px;color:#777;min-width:0}
+.mk-group-person-row input{width:100%;min-width:0;font-size:13px;padding:8px 4px}
+.mk-group-person-row button{padding:6px;min-height:34px}
+.mk-group-participants{margin-bottom:12px}
+.mk-group-participants summary{font-size:13px;color:#81767c;cursor:pointer}
+.mk-group-card-head{display:block;width:100%;background:none;border:0;text-align:left;padding:0;font-size:16px;color:#765968;overflow-wrap:anywhere}
+#mkGroupLoanTabs{margin:12px 0}
+#mkGroupForm .field label{font-size:12px}
