@@ -871,3 +871,23 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 .mk-payment-group-card .loan-record-actions button{font-weight:400}
 .mk-payment-group-card .loan-record-amt{color:#b86686}
 @media(max-width:360px){#mkGroupSwitchRow{gap:5px}#mkGroupTabs{gap:4px}#mkGroupTabs .mini{padding:6px 7px}#mkGroupSwitchRow .mk-group-switch{padding:5px 7px;font-size:11px}}
+
+/* #99: compact recording navigation and direct member entry */
+.mk-record-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.mk-record-heading .mid{margin:0}
+#record #modes{display:flex;flex-wrap:nowrap;gap:6px;align-items:center}
+#record #modes .mode-choice{padding:10px 11px;white-space:nowrap;flex:0 0 auto}
+#record .interaction-row{gap:6px;flex-wrap:nowrap}
+#record #interactionModeBtn{padding:10px 11px;white-space:nowrap;flex:none}
+#record #loanSections{display:flex;gap:5px;flex:0 1 auto;min-width:0}
+#record #loanSections.hidden{display:none}
+#record #loanSections .mini{flex:0 0 auto;min-width:0;padding:7px 7px;font-size:11px;white-space:nowrap}
+#record #recordResetBtn{flex:none;margin-left:auto}
+#record #mkGroupSwitchRow{margin-top:8px}
+.mk-group-money-note{display:inline;font-size:10px;font-weight:400;color:#827981;margin-left:5px}
+.mk-member-heading{display:flex;align-items:center;gap:10px;margin:8px 0;color:#555;font-size:13px}
+.mk-member-add{padding:3px 7px;min-height:24px;border:0;background:#f3f2f3;border-radius:7px;font-size:11px;font-weight:400;color:#827981;white-space:nowrap}
+.mk-group-participants{margin-bottom:14px}
+button.loan-record-meta.mk-meta-toggle{display:block;flex:1;text-align:left;border:0;border-radius:0;background:transparent;padding:3px 0;font:inherit;font-size:11px;color:var(--muted,#827981);min-width:0;font-weight:400;cursor:pointer}
+button.loan-record-meta.mk-meta-toggle.expanded{white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
+#record #mkGroupSwitchRow{justify-content:flex-start}
