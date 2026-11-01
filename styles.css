@@ -891,3 +891,36 @@ body > #mkRecurringModal > .mk-recurring-sheet {box-sizing:border-box!important;
 button.loan-record-meta.mk-meta-toggle{display:block;flex:1;text-align:left;border:0;border-radius:0;background:transparent;padding:3px 0;font:inherit;font-size:11px;color:var(--muted,#827981);min-width:0;font-weight:400;cursor:pointer}
 button.loan-record-meta.mk-meta-toggle.expanded{white-space:normal;overflow-wrap:anywhere;text-overflow:clip}
 #record #mkGroupSwitchRow{justify-content:flex-start}
+/* #100: existing heading rows host member actions without an extra toolbar. */
+.mk-group-label-row{display:flex;align-items:center;gap:5px;margin-bottom:5px;white-space:nowrap}
+.field .mk-group-label-row label{margin:0;flex:none}
+.mk-group-label-row .mk-member-add{font-size:9px;padding:3px 4px;min-height:22px}
+.mk-member-heading{gap:5px;flex-wrap:nowrap;font-size:12px}
+.mk-member-heading strong{white-space:nowrap}
+.mk-member-heading .mk-member-add{font-size:10px;padding:4px 5px;flex:none}
+.mk-group-calc-hint:empty{display:none}
+.mk-group-calc-hint{color:var(--bad);margin-top:5px}
+#mkMemberModal{z-index:150}
+#mkMemberModal .sheet{max-height:85dvh;overscroll-behavior:contain}
+#mkMemberModal .sheet-title{margin:0}
+.mk-member-draft-row{display:flex;gap:8px;margin:10px 0}
+.mk-member-draft-row input{min-width:0;flex:1}
+#mkMemberSave{margin-top:15px}
+#mkMemberError{margin-top:10px}
+.mk-group-header{position:relative}
+.mk-group-header:has(.mk-group-member-setting) .mk-payment-group-name{max-width:calc(100% - 105px);display:inline-block}
+.mk-group-member-setting{position:absolute;top:0;right:30px}
+.mk-event-cats-toggle{display:block;background:none;border:0;color:inherit;text-align:left;padding:8px 0;cursor:pointer}
+button.history-item-meta.mk-history-toggle{width:100%;text-align:left;border:0;background:none;padding:0;color:var(--muted);font-weight:400;cursor:pointer}
+button.history-item-meta.mk-history-toggle.expanded{display:block;-webkit-line-clamp:unset;white-space:normal;overflow:visible;overflow-wrap:anywhere}
+@media(max-width:360px){.mk-member-heading{gap:4px;font-size:11px}.mk-member-heading .mk-member-add{font-size:9px;padding:4px}.mk-group-label-row{gap:3px}}
+
+/* Keep member settings directly beside the group name, outside its toggle. */
+.mk-group-header{display:flex;align-items:center;flex-wrap:wrap;gap:5px 8px;padding-right:25px}
+.mk-group-header .mk-group-card-head{width:auto;max-width:100%;padding:0;flex:0 1 auto}
+.mk-group-header:has(.mk-group-member-setting) .mk-payment-group-name{max-width:none;display:block;overflow-wrap:anywhere}
+.mk-group-header .loan-card-arrow{position:absolute;right:0;top:8px}
+.mk-group-member-setting{position:static;flex:none}
+.mk-group-header>.mk-payment-group-balance{width:100%;margin:0}
+
+.mk-group-header>.mk-payment-group-balance{color:#785c6c;margin-bottom:8px}

@@ -43,6 +43,7 @@ let balances={};
 let rakutenPaySource='';
 let recurring=[];
 let eventsData=[];
+let mkEventCatsOpen={};
 let mkEventSelectedCats=[],mkEventRecordsOpen={},mkEventRecordFilters={};
 let loanActivePerson='',loanExpandedPerson='',lastSavedLoanPerson='',loanArchiveView=false,loanOrganize=false,loanAddToGroupId='',loanArchivedPeople=[],loanFoldAfter={},loanFoldExpanded={},loanSelectedIds=new Set(),histMoreOpen=false;
 let loanExtraPerson='',loanExtraDirection='lend';
@@ -97,6 +98,7 @@ function total(){return Object.values(balances).reduce((s,x)=>s+x.v,0)}function 
 function openPicker(title,items,cb){$('pickerTitle').textContent=title;$('pickerList').innerHTML='';items.forEach(it=>{let b=document.createElement('button');b.className='pickitem';b.textContent=it.label;b.onclick=()=>{closePicker();cb(it.value,it.label)};$('pickerList').appendChild(b)});const picker=$('pickerModal');picker.style.zIndex=!$('mkRecurringModal').classList.contains('hidden')?'130':'';picker.classList.remove('hidden')}function closePicker(){$('pickerModal').classList.add('hidden');$('pickerModal').style.zIndex=''}
 function adjustBalance(){openPicker('残高を合わせる口座',Object.entries(balances).map(([k,v])=>({label:v.name,value:k})),(k,l)=>{openMoneyPrompt(l+' の実際の残高',balances[k].v,(n)=>{let d=n-balances[k].v;balances[k].v=n;cashbook.unshift({date:$('date').value,text:'残高調整：'+l,delta:d});renderAll()},{min:-999999999})})}
 function saveSnapshot(){snapshots.unshift({date:$('date').value,value:total()});$('snapshotList').innerHTML=snapshots.map(s=>`<div class="row item"><span>${s.date}</span><strong>${yen(s.value)}</strong></div>`).join('')}
+let mkPaymentGroups=[],mkMemberContext=null,mkMemberBusy=false,mkGroupBatch=false;
 let mkGroupKind='bill',mkGroupLoanView=false,mkGroupExpanded='';
 function setMode(m,b){mode=m;document.querySelectorAll('.mode-choice').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('loanSections').classList.toggle('hidden',m!=='loan');$('loanGroups').classList.toggle('hidden',m!=='loan');mkGroupModePaint();updateForm()}function setLoanSection(sec,b){mode='loan';loanSection=sec;document.querySelectorAll('#loanSections .mini').forEach(x=>x.classList.remove('active'));b.classList.add('active');$('loanAdvance').classList.toggle('hidden',sec!=='advance');$('loanSettle').classList.toggle('hidden',sec!=='settle');$('loanLendBorrow').classList.toggle('hidden',sec!=='lendborrow');loanKind=sec==='advance'?'lend':sec==='settle'?'repay':'loanLend';document.querySelectorAll('.loan-detail-row').forEach(r=>r.querySelectorAll('.mini').forEach((x,i)=>x.classList.toggle('active',i===0)));updateForm()}function setLoanKind(k,b){loanKind=k;b.parentElement.querySelectorAll('.mini').forEach(x=>x.classList.remove('active'));b.classList.add('active');updateForm()}
 function updateForm(){mkRenderEventSuggestion();let lk=mode==='loan'?loanKind:'',isLoan=mode==='loan',isLend=isLoan&&lk==='lend';$('recordTopGrid').classList.toggle('loan-person-layout',isLoan);$('lendBox').classList.toggle('hidden',!isLend);$('lendPersonTop').classList.toggle('hidden',!isLend);$('personTop').classList.toggle('hidden',!(isLoan&&!isLend));$('normalAmount').classList.toggle('hidden',isLend);$('transferBox').classList.toggle('hidden',mode!=='transfer');$('transferFeeBox').classList.toggle('hidden',mode!=='transfer');$('recordFeeBox').classList.toggle('hidden',!(mode==='expense'||(mode==='loan'&&['repay','receive'].includes(lk))));$('chargeBox').classList.toggle('hidden',mode!=='charge');$('categoryField').classList.toggle('hidden',mode==='income'||mode==='transfer'||mode==='charge'||(mode==='loan'&&['repay','receive','loanBorrow','loanLend'].includes(lk)));$('paymentField').classList.toggle('hidden',mode==='transfer'||mode==='charge'||(mode==='loan'&&lk==='borrowed'));$('amountLabel').textContent=mode==='income'?'入金額':mode==='transfer'?'移動金額':mode==='charge'?'チャージ金額':mode==='loan'&&lk==='borrowed'?'自分の負担額':mode==='loan'&&lk==='repay'?'返した金額':mode==='loan'&&lk==='receive'?'返された金額':mode==='loan'&&lk==='loanBorrow'?'借りる金額':mode==='loan'&&lk==='loanLend'?'貸す金額':'金額';$('paymentLabel').textContent=mode==='income'?'入金先':mode==='loan'&&['receive','loanBorrow'].includes(lk)?'受取方法':'支払方法';renderPayBtns();renderPersonCandidates();mkRefreshRakPaySource();mkGroupFormPaint();mkSplitRefresh();mkCandidateRender()}
@@ -518,7 +520,7 @@ function payName(k){const code=canonicalPay(k);return code==='bank'?'銀行':(pa
 function recordTitle(t){if(t.paymentGroupId)return t.type==='lend'?'グループ会計':t.type==='receive'?'グループから受取':'グループへ支払';if(t.type==='expense')return t.categorySplits?t.categorySplits.map(r=>r.category).join('・'):t.category||'支出';if(t.type==='income')return '入金';if(t.type==='transfer')return '資金移動';if(t.type==='charge')return 'チャージ';let names={lend:'私が立替',borrowed:'相手が立替',repay:'返した',receive:'返された',loanBorrow:'借りる',loanLend:'貸す'};return names[t.type]||t.type}
 function recordMeta(t){let a=[];if(t.paymentGroupId)a.push(t.groupName);const pointMeta=mkPointMeta(t);if(pointMeta)a.push(pointMeta);if(t.type==='expense'){if(t.payment)a.push(payName(t.payment)+(t.payment==='rakutenpay'?'（'+mkRakSourceName(t.rakutenPaySource)+'）':''));if(t.discount)a.push('引落時'+t.discount+'%OFF')}else if(t.type==='income'){if(t.payment)a.push(payName(t.payment))}else if(t.type==='transfer'){a.push((balances[t.from]?.name||t.from)+' → '+(balances[t.to]?.name||t.to));if(Number(t.fee||0)>0)a.push('手数料 '+yen(t.fee)+'（'+((t.feeSide||'from')==='to'?'移動先':'移動元')+'）')}else if(t.type==='charge'){a.push((balances[t.target]?.name||t.target)+' ← '+payName(t.source))}else{if(t.person&&t.type!=='lend')a.push(t.person);if(t.payment)a.push(payName(t.payment));if(t.type==='lend'){if(t.discount)a.push('引落時'+t.discount+'%OFF')}}if(Number(t.fee||0)>0&&t.type!=='transfer')a.push('手数料 '+yen(t.fee));if(t.eventTag)a.push(t.eventTag);if(t.memo)a.push(t.memo);if(t.categorySplits)a.push(mkSplitSummary(t));return a.join('・')}
 function historyRecordMeta(t){let a=[];if(t.paymentGroupId)a.push(t.groupName);const pointMeta=mkPointMeta(t);if(pointMeta)a.push(pointMeta);if(t.type==='expense'){if(t.payment)a.push(payName(t.payment)+(t.payment==='rakutenpay'?'（'+mkRakSourceName(t.rakutenPaySource)+'）':''));if(t.discount)a.push('引落時'+t.discount+'%OFF')}else if(t.type==='income'){if(t.payment)a.push(payName(t.payment))}else if(t.type==='transfer'){a.push((balances[t.from]?.name||t.from)+' → '+(balances[t.to]?.name||t.to));if(Number(t.fee||0)>0)a.push('手数料 '+yen(t.fee)+'（'+((t.feeSide||'from')==='to'?'移動先':'移動元')+'）')}else if(t.type==='charge'){a.push((balances[t.target]?.name||t.target)+' ← '+payName(t.source))}else{if(t.person&&t.type!=='lend')a.push(t.person);if(t.payment)a.push(payName(t.payment));if(t.type==='lend'){if(t.discount)a.push('引落時'+t.discount+'%OFF')}}if(Number(t.fee||0)>0&&t.type!=='transfer')a.push('手数料 '+yen(t.fee));if(t.eventTag)a.push(t.eventTag);if(t.categorySplits)a.push(mkSplitSummary(t));return a.join('・')}
-function renderHistory(){renderHistFilterStatus();if(histTab==='spend'){let q=(histKeyword||'').trim().toLowerCase();let terms=q.match(/(?:[¥￥]?[0-9][0-9,，]*円?|[^\s　]+)/g)||[];let arr=txs.filter(t=>!isLoanExtra(t)&&t.type!=='loanAdjustment').filter(t=>histType==='all'||typeGroup(t)===histType||(histType==='loan'&&!!t.paymentGroupId)).filter(t=>!histCat||mkHasCategory(t,histCat)||(histCat==='手数料'&&['expense','transfer','repay','receive'].includes(t.type)&&Number(t.fee||0)>0)).filter(t=>!histPay||[t.payment,t.source,t.from,t.to].some(v=>canonicalPay(v)===histPay)).filter(t=>!histEvent||(histEvent==='__none'?!t.eventTag:t.eventTag===histEvent)).filter(t=>historyDateMatch(t.date)).filter(t=>terms.every(term=>{const plain=term.replace(/[¥￥円,，]/g,'');const corpus=[t.memo,mkSplitSummary(t),t.category,t.eventTag,t.person,recordTitle(t),recordMeta(t)].filter(Boolean).join(' ').toLowerCase();return /^\d+$/.test(plain)?[txAmount(t),t.amount,t.gross,t.points].filter(v=>v!=null).some(v=>String(Math.abs(v)).includes(plain)):corpus.includes(term)}));$('spendHistory').innerHTML=arr.length?arr.map(t=>{let meta=[t.date,historyRecordMeta(t)].filter(Boolean).join('・');return `<div class="item"><div class="history-item-main"><div class="history-item-title">${safeHtml(recordTitle(t))}</div><div class="history-item-amt">${yen(txAmount(t))}</div></div><div class="history-item-sub"><div class="history-item-left"><div class="history-item-meta">${safeHtml(meta)}</div>${t.memo?`<div class="history-item-note">${safeHtml(t.memo)}</div>`:''}</div><div class="history-actions"><button class="ghost sm" onclick="editRecord('${t.id}')">編集</button><button class="ghost sm danger" onclick="deleteHistoryRecord('${t.id}')">削除</button></div></div></div>`}).join(''):'<div class="small" style="margin-top:12px">該当記録なし</div>'}else{let opening=0,rows=[...cashbook].reverse(),r=opening,calc=rows.map(x=>{r+=x.delta;return {...x,r}}).reverse();$('cashHistory').innerHTML=calc.length?`<table class="passbook"><thead><tr><th>日付</th><th>内容</th><th>出金</th><th>入金</th><th>残高</th></tr></thead><tbody>${calc.map(x=>`<tr><td>${x.date.slice(5).replace('-','/')}</td><td>${x.text}</td><td>${x.delta<0?yen(-x.delta):''}</td><td>${x.delta>0?yen(x.delta):''}</td><td>${yen(x.r)}</td></tr>`).join('')}</tbody></table>`:'<div class="small" style="margin-top:12px">まだ手元資金の動きはありません。</div>'}}
+function renderHistory(){renderHistFilterStatus();if(histTab==='spend'){let q=(histKeyword||'').trim().toLowerCase();let terms=q.match(/(?:[¥￥]?[0-9][0-9,，]*円?|[^\s　]+)/g)||[];let arr=txs.filter(t=>!isLoanExtra(t)&&t.type!=='loanAdjustment').filter(t=>histType==='all'||typeGroup(t)===histType||(histType==='loan'&&!!t.paymentGroupId)).filter(t=>!histCat||mkHasCategory(t,histCat)||(histCat==='手数料'&&['expense','transfer','repay','receive'].includes(t.type)&&Number(t.fee||0)>0)).filter(t=>!histPay||[t.payment,t.source,t.from,t.to].some(v=>canonicalPay(v)===histPay)).filter(t=>!histEvent||(histEvent==='__none'?!t.eventTag:t.eventTag===histEvent)).filter(t=>historyDateMatch(t.date)).filter(t=>terms.every(term=>{const plain=term.replace(/[¥￥円,，]/g,'');const corpus=[t.memo,mkSplitSummary(t),t.category,t.eventTag,t.person,recordTitle(t),recordMeta(t)].filter(Boolean).join(' ').toLowerCase();return /^\d+$/.test(plain)?[txAmount(t),t.amount,t.gross,t.points].filter(v=>v!=null).some(v=>String(Math.abs(v)).includes(plain)):corpus.includes(term)}));$('spendHistory').innerHTML=arr.length?arr.map(t=>{let meta=[t.date,historyRecordMeta(t)].filter(Boolean).join('・');return `<div class="item"><div class="history-item-main"><div class="history-item-title">${safeHtml(recordTitle(t))}</div><div class="history-item-amt">${yen(txAmount(t))}</div></div><div class="history-item-sub"><div class="history-item-left"><button type="button" class="history-item-meta mk-history-toggle" aria-expanded="false" onclick="mkLoanMetaToggle(this)">${safeHtml(meta)}</button>${t.memo?`<div class="history-item-note">${safeHtml(t.memo)}</div>`:''}</div><div class="history-actions"><button class="ghost sm" onclick="editRecord('${t.id}')">編集</button><button class="ghost sm danger" onclick="deleteHistoryRecord('${t.id}')">削除</button></div></div></div>`}).join(''):'<div class="small" style="margin-top:12px">該当記録なし</div>'}else{let opening=0,rows=[...cashbook].reverse(),r=opening,calc=rows.map(x=>{r+=x.delta;return {...x,r}}).reverse();$('cashHistory').innerHTML=calc.length?`<table class="passbook"><thead><tr><th>日付</th><th>内容</th><th>出金</th><th>入金</th><th>残高</th></tr></thead><tbody>${calc.map(x=>`<tr><td>${x.date.slice(5).replace('-','/')}</td><td>${x.text}</td><td>${x.delta<0?yen(-x.delta):''}</td><td>${x.delta>0?yen(x.delta):''}</td><td>${yen(x.r)}</td></tr>`).join('')}</tbody></table>`:'<div class="small" style="margin-top:12px">まだ手元資金の動きはありません。</div>'}}
 function selectOptions(items,val){return items.map(x=>`<option value="${safeHtml(x[0])}" ${x[0]===val?'selected':''}>${safeHtml(x[1])}</option>`).join('')}
 function editRecord(id){let t=txs.find(x=>x.id===id);if(!t)return;if(t.paymentGroupId)return mkGroupEdit(t);let group=loanGroupForTx(id);if(group?.adjustmentId){alert('清算済みグループの記録は、グループ解除で清算調整を取り消してから編集してね');return;}editingId=id;const editKind=document.getElementById('editRecordKind');if(editKind)editKind.textContent='｜'+recordTitle(t);
  if(isLoanExtra(t)){
@@ -797,6 +799,7 @@ function mkValidateSettings(c){
  return c;
 }
 function mkValidateStoredSettings(state){
+ mkMemberValidate(state.mkPaymentGroups);
  if(Array.isArray(state.txs))state.txs.forEach(t=>{mkValidateSplits(t);mkGroupValidate(t,state.mkSettings)});
  mkValidateSettings(state.mkSettings);
  if(!state.balances||typeof state.balances!=='object'||Array.isArray(state.balances))throw Error('残高データが正しくありません。');
@@ -1037,13 +1040,14 @@ function editCategoryBudget(){openPicker('予算を編集するカテゴリ',cat
 function eventUsed(e){return Number(e.baseSpent||0)+txs.filter(t=>t.eventTag===e.name).reduce((s,t)=>s+mkNetSpend(t),0)}
 function eventDateText(e){if(e.start&&e.end)return e.start.slice(5).replace('-','/')+'〜'+e.end.slice(5).replace('-','/');if(e.start)return e.start.slice(5).replace('-','/')+'〜';return '期間未設定'}
 function mkEventCats(e,records){return [...new Set([...(e.selectedCats||Object.keys(e.catBudgets||{})),...Object.keys(e.catBudgets||{}),...records.flatMap(t=>(t.categorySplits||[{category:t.category}]).map(r=>r.category)).filter(Boolean)])]}
+function mkEventCatsToggle(id){mkEventCatsOpen[id]=!mkEventCatsOpen[id];renderEvents()}
 function mkEventRecordsToggle(id){mkEventRecordsOpen[id]=!mkEventRecordsOpen[id];renderEvents()}
 function mkEventFilter(id,value){mkEventRecordFilters[id]=value;mkEventRecordsOpen[id]=true;renderEvents()}
 function eventCard(e){
  const used=eventUsed(e),remain=e.budget?e.budget-used:null,open=openEventId===e.id,records=txs.filter(t=>t.eventTag===e.name),categories=mkEventCats(e,records),listOpen=!!mkEventRecordsOpen[e.id];
  const available=[...new Set(records.flatMap(t=>(t.categorySplits||[{category:t.category}]).map(r=>r.category)).filter(Boolean))];let filter=mkEventRecordFilters[e.id]||'';if(filter&&!available.includes(filter)){filter='';mkEventRecordFilters[e.id]=''}
  const filtered=filter?records.filter(t=>mkHasCategory(t,filter)):records;
- return `<div class="card ${open?'eventcard':''}" data-event-card="${e.id}"><div class="mk-event-topline"><button class="event-head" onclick="toggleEvent('${e.id}')"><div class="event-summary"><div><div class="item-title">${safeHtml(e.name)}</div><div class="item-meta">${eventDateText(e)}${e.budget?'　使用 '+yen(used)+' / 予算 '+yen(e.budget):'　使用 '+yen(used)}</div></div><span>${open?'▲':'▼'}</span></div></button><button class="outline mk-event-small-action" onclick="editEvent('${e.id}')">編集</button></div>${records.some(mkPointReview)?'<div class="small">要確認の立替があります。該当分は従来の自分の分で暫定集計しています。</div>':''}${open?`<div class="event-detail">${e.budget?`<div class="row"><span>総予算</span><strong>${yen(e.budget)}</strong></div><div class="row"><span>使用済み</span><strong>${yen(used)}</strong></div><div class="progress"><div style="width:${Math.max(0,Math.min(100,used/e.budget*100))}%"></div></div><div class="mk-event-total-remaining ${remain<0?'mk-event-total-over':''}">${remain<0?'超過 '+yen(-remain):'残り '+yen(remain)}</div>`:`<div class="row"><span>使用済み</span><strong>${yen(used)}</strong></div>`}<div class="subhead">カテゴリ別</div>${categories.length?categories.map(c=>{let u=records.reduce((sum,t)=>sum+mkCategoryNet(t,c),0),b=e.catBudgets?.[c],hasBudget=b!==undefined&&b!==null&&b!=='';return `<div class="item"><div class="mk-event-category-summary"><strong class="mk-event-category-name">${safeHtml(c)}</strong><strong class="mk-event-category-spent">${yen(u)}</strong></div><div class="mk-event-category-secondary"><span>${hasBudget?'予算 '+yen(b):'予算未設定'}</span>${hasBudget?(u>Number(b)?`<span class="mk-event-over">超過 ${yen(u-Number(b))}</span>`:`<span>残り ${yen(Number(b)-u)}</span>`):''}</div></div>`}).join(''):'<div class="small">カテゴリ別の記録はまだありません。</div>'}<div class="mk-event-record-head"><button class="mk-event-record-toggle" onclick="mkEventRecordsToggle('${e.id}')">記録一覧（${records.length}件） ${listOpen?'▲':'▼'}</button>${`<select class="mk-event-record-filter" aria-label="カテゴリで絞り込み" onchange="mkEventFilter('${e.id}',this.value)"><option value="">すべて</option>${available.map(c=>`<option value="${safeHtml(c)}" ${filter===c?'selected':''}>${safeHtml(c)}</option>`).join('')}</select>`}</div>${listOpen?(filtered.length?filtered.map(t=>`<div class="item"><div class="history-item-main"><div class="history-item-title">${safeHtml(recordTitle(t))}</div><div class="history-item-amt">${yen(txAmount(t))}</div></div><div class="history-item-sub"><div class="history-item-left"><div class="history-item-meta">${safeHtml([t.date,historyRecordMeta(t)].filter(Boolean).join('・'))}</div>${t.memo?`<div class="history-item-note">${safeHtml(t.memo)}</div>`:''}</div><div class="history-actions"><button class="ghost sm" onclick="editRecord('${t.id}')">編集</button><button class="ghost sm danger" onclick="deleteHistoryRecord('${t.id}')">削除</button></div></div></div>`).join(''):'<div class="small">該当する記録はありません。</div>'):''}<div class="mk-event-bottom-actions"><button class="outline mk-event-small-action" onclick="archiveEvent('${e.id}')">${e.archived?'元に戻す':'アーカイブ'}</button></div>${e.archived?`<button class="outline danger" style="width:100%;margin-top:7px" onclick="deleteEvent('${e.id}')">このイベントを削除</button>`:''}</div>`:''}</div>`
+ return `<div class="card ${open?'eventcard':''}" data-event-card="${e.id}"><div class="mk-event-topline"><button class="event-head" onclick="toggleEvent('${e.id}')"><div class="event-summary"><div><div class="item-title">${safeHtml(e.name)}</div><div class="item-meta">${eventDateText(e)}${e.budget?'　使用 '+yen(used)+' / 予算 '+yen(e.budget):'　使用 '+yen(used)}</div></div><span>${open?'▲':'▼'}</span></div></button><button class="outline mk-event-small-action" onclick="editEvent('${e.id}')">編集</button></div>${records.some(mkPointReview)?'<div class="small">要確認の立替があります。該当分は従来の自分の分で暫定集計しています。</div>':''}${open?`<div class="event-detail">${e.budget?`<div class="row"><span>総予算</span><strong>${yen(e.budget)}</strong></div><div class="row"><span>使用済み</span><strong>${yen(used)}</strong></div><div class="progress"><div style="width:${Math.max(0,Math.min(100,used/e.budget*100))}%"></div></div><div class="mk-event-total-remaining ${remain<0?'mk-event-total-over':''}">${remain<0?'超過 '+yen(-remain):'残り '+yen(remain)}</div>`:`<div class="row"><span>使用済み</span><strong>${yen(used)}</strong></div>`}<button type="button" class="subhead mk-event-cats-toggle" aria-expanded="${!!mkEventCatsOpen[e.id]}" onclick="mkEventCatsToggle('${e.id}')">カテゴリ別 ${mkEventCatsOpen[e.id]?'▲':'▼'}</button><div class="mk-event-cats-body ${mkEventCatsOpen[e.id]?'':'hidden'}">${categories.length?categories.map(c=>{let u=records.reduce((sum,t)=>sum+mkCategoryNet(t,c),0),b=e.catBudgets?.[c],hasBudget=b!==undefined&&b!==null&&b!=='';return `<div class="item"><div class="mk-event-category-summary"><strong class="mk-event-category-name">${safeHtml(c)}</strong><strong class="mk-event-category-spent">${yen(u)}</strong></div><div class="mk-event-category-secondary"><span>${hasBudget?'予算 '+yen(b):'予算未設定'}</span>${hasBudget?(u>Number(b)?`<span class="mk-event-over">超過 ${yen(u-Number(b))}</span>`:`<span>残り ${yen(Number(b)-u)}</span>`):''}</div></div>`}).join(''):'<div class="small">カテゴリ別の記録はまだありません。</div>'}</div><div class="mk-event-record-head"><button class="mk-event-record-toggle" onclick="mkEventRecordsToggle('${e.id}')">記録一覧（${records.length}件） ${listOpen?'▲':'▼'}</button>${`<select class="mk-event-record-filter" aria-label="カテゴリで絞り込み" onchange="mkEventFilter('${e.id}',this.value)"><option value="">すべて</option>${available.map(c=>`<option value="${safeHtml(c)}" ${filter===c?'selected':''}>${safeHtml(c)}</option>`).join('')}</select>`}</div>${listOpen?(filtered.length?filtered.map(t=>`<div class="item"><div class="history-item-main"><div class="history-item-title">${safeHtml(recordTitle(t))}</div><div class="history-item-amt">${yen(txAmount(t))}</div></div><div class="history-item-sub"><div class="history-item-left"><button type="button" class="history-item-meta mk-history-toggle" aria-expanded="false" onclick="mkLoanMetaToggle(this)">${safeHtml([t.date,historyRecordMeta(t)].filter(Boolean).join('・'))}</button>${t.memo?`<div class="history-item-note">${safeHtml(t.memo)}</div>`:''}</div><div class="history-actions"><button class="ghost sm" onclick="editRecord('${t.id}')">編集</button><button class="ghost sm danger" onclick="deleteHistoryRecord('${t.id}')">削除</button></div></div></div>`).join(''):'<div class="small">該当する記録はありません。</div>'):''}<div class="mk-event-bottom-actions"><button class="outline mk-event-small-action" onclick="archiveEvent('${e.id}')">${e.archived?'元に戻す':'アーカイブ'}</button></div>${e.archived?`<button class="outline danger" style="width:100%;margin-top:7px" onclick="deleteEvent('${e.id}')">このイベントを削除</button>`:''}</div>`:''}</div>`
 }
 function renderEvents(){const ef=$('eventForm');if(ef&&ef.dataset.editId&&!ef.classList.contains('hidden'))$('activeEvents').before(ef);$('activeEvents').innerHTML=eventsData.filter(e=>!e.archived).map(eventCard).join('')||'<div class="small">開催中・予定のイベントはありません。</div>';$('archivedEvents').innerHTML=eventsData.filter(e=>e.archived).map(eventCard).join('')||'<div class="small">まだありません。</div>';renderPastEventNames();mkMountEditingEventForm()}
 function toggleEvent(id){openEventId=openEventId===id?'':id;renderEvents()}
@@ -1490,7 +1494,7 @@ function mkLoanTodoFromButton(btn){
 
 function mkState(){return {
   mkSettings,
-  txs,loans,cashbook,snapshots,wishes,recurring,eventsData,mkTodos,mkTodoHidden,mkMemoData,
+  txs,loans,cashbook,snapshots,wishes,recurring,eventsData,mkTodos,mkTodoHidden,mkMemoData,mkPaymentGroups,
   billAdjustments,billItemAdjustments,mkPaidBills,deletedEventNames,
   loanArchivedPeople,loanGroups,loanGroupSerial,
   monthlyBudget,categoryBudgets,monthlyBudgetHistory,categoryBudgetHistory,chargeDefaults,
@@ -1500,6 +1504,7 @@ function mkRestoreState(state){
   if(!state||typeof state!=='object')throw new Error('Invalid data');
   state=MKMigrations.renameCategories(mkValidateStoredSettings(state));
   mkApplySettings(state.mkSettings);
+  mkPaymentGroups=structuredClone(state.mkPaymentGroups||[]);
   mkMemoData=state.mkMemoData===undefined?{groups:[],words:[]}:mkMemoValidate(state.mkMemoData);
   const arrayKeys=['txs','loans','cashbook','snapshots','wishes','recurring','eventsData','deletedEventNames','loanArchivedPeople','loanGroups'];
   for(const key of arrayKeys)if(state[key]!==undefined&&!Array.isArray(state[key]))throw new Error('Invalid '+key);
@@ -1904,27 +1909,43 @@ function mkGroupFormPaint(){
 }
 function mkGroupClear(){
  for(const id of ['mkGroupName','mkGroupTotal','mkGroupPaid','mkGroupMine','mkGroupSettlementAmount','mkGroupPerson'])if($(id))$(id).value='';
- $('mkGroupParticipants')?.replaceChildren();
+ $('mkGroupParticipants')?.replaceChildren();['mkGroupPaid','mkGroupMine'].forEach(id=>delete $(id).dataset.groupAuto);if($('mkGroupCalcHint'))$('mkGroupCalcHint').textContent='';
 }
 function mkGroupAddParticipant(row={},edit=false){
  const host=$(edit?'mkEditGroupParticipants':'mkGroupParticipants'),line=document.createElement('div');line.className='mk-group-person-row';
  for(const [key,label] of [['name','名前'],['paid','支払額'],['share','負担額']]){const wrap=document.createElement('label');wrap.textContent=label;const input=document.createElement('input');input.dataset.groupProp=key;input.setAttribute('aria-label','参加者の'+label);input.value=row[key]??'';if(key==='name')input.maxLength=60;else input.inputMode='numeric';wrap.append(input);if(key!=='name'){attachMoneyInput(input);formatMoneyElement(input)}line.append(wrap)}
- const remove=document.createElement('button');remove.type='button';remove.className='ghost sm';remove.textContent='×';remove.setAttribute('aria-label','参加者を削除');remove.onclick=()=>line.remove();line.append(remove);host.append(line);mkGroupFillZero(edit);
+ const remove=document.createElement('button');remove.type='button';remove.className='ghost sm';remove.textContent='×';remove.setAttribute('aria-label','参加者を削除');remove.onclick=()=>{line.remove();mkGroupFillZero(edit)};line.append(remove);host.append(line);mkMemberCandidates(edit);mkGroupFillZero(edit);
 }
-// Only infer a blank member payment when the whole bill was paid by self.
-function mkGroupFillZero(edit=false){
- const total=$(edit?'editTotal':'mkGroupTotal'),paid=$(edit?'editPaid':'mkGroupPaid'),host=$(edit?'mkEditGroupParticipants':'mkGroupParticipants');
- if(!total||!paid||!host)return;
- const parse=e=>{try{return mkGroupMoney(e.value)}catch{return null}},t=parse(total),p=parse(paid),full=t!==null&&t>0&&p===t;
- host.querySelectorAll('[data-group-prop="paid"]').forEach(input=>{
-  if(input.dataset.autoZero==='1'&&!full){input.value='';delete input.dataset.autoZero}
-  if(full&&input.value.trim()===''){input.value='0';input.dataset.autoZero='1'}
- });
+// Recompute inferred cells independently for payments and shares; manual values are never overwritten.
+function mkGroupFillZero(edit=false,skip=null){
+ if(mkGroupBatch)return;
+ const total=$(edit?'editTotal':'mkGroupTotal'),host=$(edit?'mkEditGroupParticipants':'mkGroupParticipants'),hint=$(edit?'mkEditGroupCalcHint':'mkGroupCalcHint');
+ if(!total||!host)return;
+ let t;try{t=mkGroupMoney(total.value)}catch{t=null}
+ const errors=[];
+ for(const [key,id,label] of [['paid',edit?'editPaid':'mkGroupPaid','支払額'],['share',edit?'editMine':'mkGroupMine','負担額']]){
+  const fields=[$(id),...host.querySelectorAll('[data-group-prop="'+key+'"]')].filter(Boolean);
+  fields.forEach(input=>{if(input.dataset.groupAuto==='1'){input.value='';delete input.dataset.groupAuto}});
+  if(t===null||t<1||!host.children.length)continue;
+  const blanks=fields.filter(input=>input.value.trim()==='');let sum=0n,valid=true;
+  for(const input of fields.filter(input=>input.value.trim()!=='')){try{sum+=BigInt(mkGroupMoney(input.value))}catch{valid=false}}
+  if(!valid)continue;
+  const remaining=BigInt(t)-sum;
+  if(remaining<0n){errors.push(label+'の合計が会計総額を'+yen(Number(-remaining))+'超えています。');continue}
+  if((blanks.length===1||remaining===0n)&&!blanks.includes(skip))for(const input of blanks){input.value=Number(remaining).toLocaleString('ja-JP');input.dataset.groupAuto='1'}
+ }
+ if(hint)hint.textContent=errors.join(' ');
+ if(!edit&&mode==='group'){mkGroupFormPaint();mkSplitRefresh();mkCandidateRender()}else if(edit)mkSplitRefresh(true);
 }
-document.addEventListener('input',e=>{
- if(e.target.matches('[data-group-prop="paid"]'))delete e.target.dataset.autoZero;
- if(['mkGroupTotal','mkGroupPaid','editTotal','editPaid'].includes(e.target.id))mkGroupFillZero(e.target.id.startsWith('edit'));
-});
+function mkGroupAmountEvent(e){
+ const input=e.target,member=input.matches('[data-group-prop="paid"],[data-group-prop="share"]');
+ if(!member&&!['mkGroupTotal','mkGroupPaid','mkGroupMine','editTotal','editPaid','editMine'].includes(input.id))return;
+ const edit=!!input.closest('#editBody');if(edit&&!$('mkEditGroupParticipants'))return;
+ if(e.type==='input')delete input.dataset.groupAuto;
+ mkGroupFillZero(edit,e.type==='input'?input:null);
+}
+document.addEventListener('input',mkGroupAmountEvent);
+document.addEventListener('focusout',mkGroupAmountEvent);
 function mkLoanMetaToggle(button){const expanded=button.getAttribute('aria-expanded')!=='true';button.setAttribute('aria-expanded',String(expanded));button.classList.toggle('expanded',expanded)}
 function mkGroupParticipants(edit=false){return [...$(edit?'mkEditGroupParticipants':'mkGroupParticipants').children].map(line=>{const get=k=>line.querySelector('[data-group-prop="'+k+'"]').value.trim();return {name:get('name'),paid:mkGroupMoney(get('paid')),share:mkGroupMoney(get('share'))}})}
 function mkGroupMoney(v){const text=String(v).replace(/[,，]/g,'').trim();if(!/^\d+$/.test(text))throw Error('金額は0円以上の整数で入力してください。');const n=Number(text);if(!Number.isSafeInteger(n))throw Error('金額が大きすぎます。');return n}
@@ -1966,14 +1987,14 @@ function mkGroupSave(){
 function mkGroupEdit(t){
  editingId=t.id;const bill=t.type==='lend';$('editRecordKind').textContent='｜'+recordTitle(t);
  const field=(label,id,value,type='text')=>`<div class="field"><label>${label}</label><input id="${id}" type="${type}" value="${safeHtml(String(value??''))}" ${type==='text'?'inputmode="'+(id==='editName'||id==='editPerson'?'text':'numeric')+'"':''}></div>`;
- let h='<div class="grid2">'+field('日付','editDate',t.date,'date')+field('グループ名','editName',t.groupName)+'</div>';
- if(bill){h+=field('会計総額 <span class="mk-group-money-note">※金額はポイント利用前で入力</span>','editTotal',t.groupTotal)+`<div class="grid2">${field('自分が支払った額','editPaid',t.gross)}${field('自分の負担額','editMine',t.amount)}</div><div class="mk-group-participants"><div class="mk-member-heading"><strong>メンバーの支払・負担額</strong><button type="button" class="mk-member-add" onclick="mkGroupAddParticipant({},true)">＋ 内訳</button></div><div id="mkEditGroupParticipants"></div></div><div class="field"><label>カテゴリ</label><select id="editCategory"><option value="">選んでください</option>${selectOptions(cats.map(c=>[c,c]),t.category)}</select></div>`}
+ let h='<div class="grid2">'+field('日付','editDate',t.date,'date')+field('グループ名 <button type="button" class="mk-member-add" onclick="mkMemberOpen(true)">メンバー設定</button>','editName',t.groupName)+'</div>';
+ if(bill){h+=field('会計総額 <span class="mk-group-money-note">※各金額はポイント利用前で入力</span>','editTotal',t.groupTotal)+`<div class="grid2">${field('自分が支払った額','editPaid',t.gross)}${field('自分の負担額','editMine',t.amount)}</div><div class="mk-group-participants"><div class="mk-member-heading"><strong>メンバーの支払・負担額</strong><button type="button" class="mk-member-add" onclick="mkGroupAddParticipant({},true)">＋ 内訳</button><button type="button" class="mk-member-add" onclick="mkMemberAddAll(true)">全員を追加</button></div><div id="mkEditGroupParticipants"></div><div id="mkEditGroupCalcHint" class="small mk-group-calc-hint" role="status"></div></div><div class="field"><label>カテゴリ</label><select id="editCategory"><option value="">選んでください</option>${selectOptions(cats.map(c=>[c,c]),t.category)}</select></div>`}
  else h+=`<div class="grid2">${field('金額','editSettlementAmount',t.amount)}${field('相手','editPerson',t.person)}</div>`;
  const options=bill?pays:mkSettings.accounts.map(x=>[x.id,x.name]);
  h+=`<div class="field"><label>${t.type==='receive'?'受取先':'支払方法'}</label><select id="editPayment"><option value="">選んでください</option>${selectOptions(options,t.payment)}</select></div>`;
  if(bill)h+=`<details class="mk-edit-details"><summary>詳細設定</summary><div class="grid2">${field('ポイント使用','editPoints',t.points,'number')}${field('引落時割引（%）','editDiscount',t.discount,'number')}</div><div class="field"><label>分割回数</label><select id="editInstallments">${selectOptions([[1,'1回'],[2,'2回'],[3,'3回'],[6,'6回']],t.installments)}</select></div><div class="field"><label>楽天Payの支払元</label><select id="editRakPaySource">${selectOptions(mkSettings.rakutenSources,t.rakutenPaySource||'')}</select></div><div class="field"><label>特別費イベント</label><select id="editEvent"><option value="">なし</option>${selectOptions([...new Set([...eventsData.map(e=>e.name),t.eventTag].filter(Boolean))].map(n=>[n,n]),t.eventTag)}</select></div></details>`;
  h+=`<div class="field"><label>店名・メモ</label><input id="editMemo" value="${safeHtml(t.memo||'')}"></div>`;
- $('editBody').innerHTML=h;initMoneyInputs();refreshMoneyInputs();if(bill){t.groupParticipants.forEach(r=>mkGroupAddParticipant(r,true));mkSplitSetupEdit(t)}
+ $('editBody').innerHTML=h;initMoneyInputs();refreshMoneyInputs();if(bill){mkGroupBatch=true;try{t.groupParticipants.forEach(r=>mkGroupAddParticipant(r,true))}finally{mkGroupBatch=false}mkSplitSetupEdit(t)}
  $('editError').textContent='';$('editModal').classList.remove('hidden');
 }
 function mkGroupSaveEdit(original){
@@ -1983,7 +2004,7 @@ function mkGroupSaveEdit(original){
  reverseTxEffect(original);for(const k of Object.keys(original))delete original[k];Object.assign(original,next);applyTxEffect(original);closeEditRecord();renderAll();
 }
 function mkGroupList(){
- const map=new Map();for(const t of [...txs].reverse()){if(!t.paymentGroupId)continue;if(!map.has(t.paymentGroupId))map.set(t.paymentGroupId,{id:t.paymentGroupId,name:t.groupName,net:0,rows:[]});const g=map.get(t.paymentGroupId);g.name=t.groupName;g.rows.unshift(t);g.net+=t.type==='lend'?t.gross-t.amount:t.type==='receive'?-t.amount:t.amount}
+ const map=new Map(mkPaymentGroups.map(g=>[g.id,{id:g.id,name:g.name,net:0,rows:[]}]));for(const t of [...txs].reverse()){if(!t.paymentGroupId)continue;if(!map.has(t.paymentGroupId))map.set(t.paymentGroupId,{id:t.paymentGroupId,name:t.groupName,net:0,rows:[]});const g=map.get(t.paymentGroupId);if(!mkPaymentGroups.some(x=>x.id===g.id))g.name=t.groupName;g.rows.unshift(t);g.net+=t.type==='lend'?t.gross-t.amount:t.type==='receive'?-t.amount:t.amount}
  return [...map.values()];
 }
 function mkGroupBalanceText(net){return net>0?'受取残額 '+yen(net):net<0?'支払残額 '+yen(-net):'清算済み'}
@@ -1993,8 +2014,9 @@ function mkGroupLoanPaint(){
  $('loanPersonTabs').classList.toggle('hidden',mkGroupLoanView);if(!mkGroupLoanView)return;
  const groups=mkGroupList();$('loanSummary').innerHTML='';
  if(!groups.length){$('loanSummary').textContent='まだグループの記録はありません。';return}
- for(const g of groups){const card=document.createElement('div');card.className='card mk-payment-group-card';const head=document.createElement('button');head.type='button';head.className='mk-group-card-head';head.setAttribute('aria-expanded',String(mkGroupExpanded===g.id));head.innerHTML='<span><strong class="mk-payment-group-name">'+safeHtml(g.name)+'</strong><span class="mk-payment-group-balance">'+safeHtml(mkGroupBalanceText(g.net))+'</span></span><span class="loan-card-arrow">'+(mkGroupExpanded===g.id?'▲':'▼')+'</span>';head.onclick=()=>{mkGroupExpanded=mkGroupExpanded===g.id?'':g.id;renderLoans()};card.append(head);
- if(mkGroupExpanded===g.id){const actions=document.createElement('div');actions.className='choice-row mk-payment-group-actions';for(const [kind,title] of [['bill','会計を記録'],['receive','受け取った'],['pay','支払った']]){const b=document.createElement('button');b.type='button';b.className='mk-loan-todo-btn';b.textContent=title;b.onclick=()=>{nav('record',null);setMode('group',$('mkGroupModeBtn'));mkGroupChooseKind(kind);$('mkGroupName').value=g.name};actions.append(b)}card.append(actions);
+ for(const g of groups){const card=document.createElement('div');card.className='card mk-payment-group-card';const head=document.createElement('button');head.type='button';head.className='mk-group-card-head';head.setAttribute('aria-expanded',String(mkGroupExpanded===g.id));head.innerHTML='<span><strong class="mk-payment-group-name">'+safeHtml(g.name)+'</strong><span class="mk-payment-group-balance">'+safeHtml(mkGroupBalanceText(g.net))+'</span></span><span class="loan-card-arrow">'+(mkGroupExpanded===g.id?'▲':'▼')+'</span>';head.onclick=()=>{mkGroupExpanded=mkGroupExpanded===g.id?'':g.id;renderLoans()};const header=document.createElement('div');header.className='mk-group-header';header.append(head);
+ if(mkGroupExpanded===g.id){const setting=document.createElement('button');setting.type='button';setting.className='mk-member-add mk-group-member-setting';setting.textContent='メンバー設定';setting.onclick=()=>mkMemberOpen(false,g.id);header.append(setting)}const balance=head.querySelector('.mk-payment-group-balance');header.append(balance);card.append(header);
+ if(mkGroupExpanded===g.id){const actions=document.createElement('div');actions.className='choice-row mk-payment-group-actions';for(const [kind,title] of [['bill','会計を記録'],['receive','受け取った'],['pay','支払った']]){const b=document.createElement('button');b.type='button';b.className='mk-loan-todo-btn';b.textContent=title;b.onclick=()=>{nav('record',null);setMode('group',$('mkGroupModeBtn'));mkGroupChooseKind(kind);$('mkGroupName').value=g.name;mkMemberCandidates()};actions.append(b)}card.append(actions);
  const heading=document.createElement('div');heading.className='loan-history-head';heading.innerHTML='<span class="loan-history-title">グループの履歴</span>';card.append(heading);
  for(const t of g.rows){const row=document.createElement('div');row.className='loan-record';
  const top=document.createElement('div');top.className='loan-record-top';const title=document.createElement('span');title.className='loan-record-kind';title.textContent=recordTitle(t);const amount=document.createElement('span');amount.className='loan-record-amt';amount.textContent=yen(txAmount(t));top.append(title,amount);
@@ -2006,3 +2028,68 @@ function mkGroupLoanPaint(){
 // New numeric fields update visibility and split calculations without erasing input.
 for(const id of ['mkGroupMine','mkGroupPaid'])$(id).addEventListener('input',()=>{mkGroupFormPaint();mkSplitRefresh();mkCandidateRender()});
 mkGroupFormPaint();
+
+// #100 Group member settings are independent from immutable names on past records.
+function mkMemberValidate(groups){
+ if(groups===undefined)return;
+ if(!Array.isArray(groups)||groups.length>1000)throw Error('グループ設定を確認してください。');
+ const ids=new Set(),names=new Set(),valid=s=>typeof s==='string'&&s.trim()===s&&s.length>0&&s.length<=60;
+ for(const g of groups){
+  if(!g||typeof g!=='object'||Array.isArray(g)||!valid(g.id)||!valid(g.name)||ids.has(g.id)||names.has(g.name)||!Array.isArray(g.members)||g.members.length>100||g.members.some(n=>!valid(n))||new Set(g.members).size!==g.members.length)throw Error('メンバー設定の名前や重複を確認してください。');
+  ids.add(g.id);names.add(g.name);
+ }
+}
+function mkMemberGroup(edit=false){const name=$(edit?'editName':'mkGroupName')?.value.trim();return mkGroupList().find(g=>g.name===name)}
+function mkMemberNames(edit=false){const g=mkMemberGroup(edit);return mkPaymentGroups.find(x=>x.id===g?.id)?.members||[]}
+function mkMemberCandidates(edit=false){
+ const host=$(edit?'mkEditGroupParticipants':'mkGroupParticipants');if(!host)return;
+ const id=edit?'mkEditMemberNames':'mkMemberNames';let list=$(id);if(!list){list=document.createElement('datalist');list.id=id;document.body.append(list)}
+ list.replaceChildren(...mkMemberNames(edit).map(n=>{const option=document.createElement('option');option.value=n;return option}));
+ host.querySelectorAll('[data-group-prop="name"]').forEach(input=>input.setAttribute('list',id));
+}
+function mkMemberOpen(edit=false,groupId=''){
+ if(mkMemberBusy)return;
+ const group=groupId?mkGroupList().find(g=>g.id===groupId):mkMemberGroup(edit),name=group?.name||$(edit?'editName':'mkGroupName')?.value.trim();
+ if(!name||name.length>60){$(edit?'editError':'recordError').textContent='先にグループ名を入力してください。';$(edit?'editName':'mkGroupName')?.focus();return}
+ mkMemberContext={edit,id:group?.id||'grp'+crypto.randomUUID(),name,focus:document.activeElement};
+ $('mkMemberRows').replaceChildren();$('mkMemberGroupName').textContent=name;$('mkMemberError').textContent='';
+ const members=mkPaymentGroups.find(g=>g.id===group?.id)?.members||[];
+ members.forEach(m=>mkMemberDraftRow(m));if(!members.length)mkMemberDraftRow();
+ $('mkMemberModal').classList.remove('hidden');$('mkMemberRows').querySelector('input')?.focus();
+}
+function mkMemberDraftRow(name=''){
+ if(mkMemberBusy)return;
+ const row=document.createElement('div');row.className='mk-member-draft-row';const input=document.createElement('input');input.value=name;input.maxLength=60;input.placeholder='メンバー名';input.setAttribute('aria-label','メンバー名');
+ const remove=document.createElement('button');remove.type='button';remove.className='ghost sm';remove.textContent='×';remove.setAttribute('aria-label','メンバーを削除');remove.onclick=()=>row.remove();row.append(input,remove);$('mkMemberRows').append(row);
+}
+function mkMemberClose(){if(mkMemberBusy)return;$('mkMemberModal').classList.add('hidden');mkMemberContext?.focus?.focus();mkMemberContext=null}
+async function mkMemberSave(){
+ if(mkMemberBusy||!mkMemberContext)return;
+ const members=[...$('mkMemberRows').querySelectorAll('input')].map(e=>e.value.trim());
+ if(members.some(n=>!n)){ $('mkMemberError').textContent='名前を入力するか、不要な行を削除してください。';return}
+ const entry={id:mkMemberContext.id,name:mkMemberContext.name,members},next=mkPaymentGroups.filter(g=>g.id!==entry.id).concat([entry]);
+ try{mkMemberValidate(next)}catch(e){$('mkMemberError').textContent=e.message;return}
+ if(!mkStorageReady){$('mkMemberError').textContent='保存が利用できません。画面を閉じずに確認してください。';return}
+ const candidate=structuredClone(mkState());candidate.mkPaymentGroups=next;
+ mkMemberBusy=true;clearTimeout(mkSaveTimer);mkStorageReady=false;$('mkMemberModal').firstElementChild.inert=true;$('mkMemberSave').textContent='保存中…';
+ try{
+  await MKStorage.save(candidate);mkPaymentGroups=next;mkStorageReady=true;
+  mkMemberCandidates();mkMemberCandidates(true);$('mkGroupNames').replaceChildren(...mkGroupList().map(g=>{const o=document.createElement('option');o.value=g.name;return o}));renderLoans();
+  mkMemberBusy=false;mkMemberClose();
+ }catch(e){mkStorageReady=true;$('mkMemberError').textContent='保存できませんでした。もう一度保存してください。';console.error('メンバー設定の保存失敗',e)}
+ finally{mkMemberBusy=false;$('mkMemberModal').firstElementChild.inert=false;$('mkMemberSave').textContent='保存'}
+}
+function mkMemberAddAll(edit=false){
+ const names=mkMemberNames(edit);if(!names.length){mkMemberOpen(edit);return}
+ const host=$(edit?'mkEditGroupParticipants':'mkGroupParticipants'),existing=new Set([...host.querySelectorAll('[data-group-prop="name"]')].map(x=>x.value.trim()));
+ const empty=[...host.children].filter(row=>[...row.querySelectorAll('input')].every(input=>input.value.trim()===''||input.dataset.groupAuto==='1'));
+ mkGroupBatch=true;
+ try{for(const name of names){if(existing.has(name))continue;const blank=empty.shift();if(blank)blank.querySelector('[data-group-prop="name"]').value=name;else mkGroupAddParticipant({name},edit);existing.add(name)}}finally{mkGroupBatch=false}
+ mkMemberCandidates(edit);mkGroupFillZero(edit);
+}
+document.addEventListener('input',e=>{if(e.target.id==='mkGroupName')mkMemberCandidates();if(e.target.id==='editName')mkMemberCandidates(true)});
+document.addEventListener('keydown',e=>{
+ const modal=$('mkMemberModal');if(!modal||modal.classList.contains('hidden'))return;
+ if(e.key==='Escape'){e.preventDefault();mkMemberClose()}
+ if(e.key==='Tab'){const list=[...modal.querySelectorAll('button,input')].filter(x=>!x.disabled);if(!list.length)return;const first=list[0],last=list.at(-1);if(e.shiftKey&&document.activeElement===first){e.preventDefault();last.focus()}else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first.focus()}}
+});
