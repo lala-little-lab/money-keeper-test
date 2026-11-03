@@ -942,3 +942,12 @@ button.history-item-meta.mk-history-toggle.expanded{display:block;-webkit-line-c
 #mkSaveBar button{margin-left:8px}
 .mk-security-actions{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
 .mk-security-actions button{font-weight:400}
+
+/* #102: consistent charge typography, split money fields and group input alignment. */
+#chargeTargets .mini,#chargeSources .mini{font-weight:400}
+.mk-split-money .money-input{width:100%;min-width:0}
+#recordTopGrid:has(#mkGroupNameField:not(.hidden))>.field:first-child>label,
+#recordTopGrid:has(#mkGroupNameField:not(.hidden)) .mk-group-label-row{min-height:24px;margin-bottom:5px;display:flex;align-items:center}
+#recordTopGrid:has(#mkGroupNameField:not(.hidden)){align-items:start}
+#recordTopGrid:has(#mkGroupNameField:not(.hidden)) #date,
+#recordTopGrid:has(#mkGroupNameField:not(.hidden)) #mkGroupName{height:46px;box-sizing:border-box}

@@ -436,7 +436,7 @@ function mkSplitRender(edit=false){
   const box=document.createElement('div');box.className='mk-split-money';
   const input=document.createElement('input');input.type='text';input.inputMode='numeric';input.setAttribute('aria-label','内訳'+(i+1)+'の金額');input.dataset.splitAmount=String(i);input.placeholder='金額';
   input.oninput=()=>{const v=input.value.replace(/[,，]/g,'').trim();r.manual=v===''?null:/^\d+$/.test(v)?Number(v):NaN;mkSplitRefresh(edit)};
-  const note=document.createElement('span');note.className='small';note.dataset.splitNote=String(i);box.append(input,note);
+  const note=document.createElement('span');note.className='small';note.dataset.splitNote=String(i);box.append(input,note);attachMoneyInput(input);
   const remove=document.createElement('button');remove.type='button';remove.className='ghost sm';remove.textContent='×';remove.setAttribute('aria-label','内訳'+(i+1)+'を削除');remove.onclick=()=>mkSplitRemove(i,edit);
   line.append(select,box,remove);host.append(line);
  });
@@ -449,7 +449,7 @@ function mkSplitRefresh(edit=false){
  const total=mkSplitTarget(edit),resolved=mkSplitResolve(rows,total),error=mkSplitError(resolved,total),points=mkSplitPoints(edit);
  let parts=[];if(!error&&Number.isSafeInteger(points)&&points>=0&&points<=total)parts=mkCategoryParts({type:'expense',amount:total,points,categorySplits:resolved});
  rows.forEach((r,i)=>{const input=host.querySelector('[data-split-amount="'+i+'"]'),note=host.querySelector('[data-split-note="'+i+'"]');
-  if(document.activeElement!==input)input.value=r.manual===null?(resolved[i].amount??''):(Number.isFinite(r.manual)?r.manual:'');
+  if(document.activeElement!==input){input.value=r.manual===null?(resolved[i].amount??''):(Number.isFinite(r.manual)?r.manual:'');formatMoneyElement(input);}
   const auto=r.manual===null&&resolved[i].amount!==null;
   note.textContent=(auto?'自動':'')+(parts[i]&&points>0?(auto?'・':'')+'集計 '+yen(parts[i].amount-parts[i].points)+'（'+parts[i].points+'pt使用）':'');
  });
