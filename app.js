@@ -14,6 +14,7 @@ function formatMoneyElement(input,keepCaret=false){
  if(keepCaret&&document.activeElement===input){let pos=0,count=0;while(pos<next.length&&count<before){if(/[0-9]/.test(next[pos]))count++;pos++}try{input.setSelectionRange(pos,pos)}catch(_){}}
 }
 function attachMoneyInput(input){
+ input.removeAttribute('placeholder'); // Empty money fields show only the fixed yen prefix.
  if(input.dataset.moneyReady==='1')return;
  input.dataset.moneyReady='1';input.type='text';input.inputMode='numeric';input.autocomplete='off';
  let wrapper=input.parentElement;
@@ -1071,7 +1072,7 @@ function mkEventSetAmount(cat,value){newEventCatBudgets[cat]=value.trim()===''?n
 function mkEventClear(cat){newEventCatBudgets[cat]=null;let el=document.querySelector(`[data-event-budget="${CSS.escape(cat)}"]`);if(el)el.value=''}
 function renderNewEventCatRows(){
  $('mkEventCatPicker').innerHTML=cats.map(c=>`<label class="mk-event-check"><input type="checkbox" ${mkEventSelectedCats.includes(c)?'checked':''} onchange="mkEventCheckCat('${c.replace(/'/g,"\\'")}',this.checked)"><span>${safeHtml(c)}</span></label>`).join('');
- $('newEventCatRows').innerHTML=mkEventSelectedCats.map(c=>`<div class="mk-event-budget-row"><span class="mk-event-budget-label">${safeHtml(c)}</span><div class="mk-event-money-field"><input data-event-budget="${safeHtml(c)}" type="text" inputmode="numeric" placeholder="未設定" value="${newEventCatBudgets[c]===null||newEventCatBudgets[c]===undefined?'':'¥'+moneyFormatted(newEventCatBudgets[c])}" oninput="mkEventSetAmount('${c.replace(/'/g,"\'")}',this.value)"></div><button class="ghost sm" type="button" onclick="mkEventClear('${c.replace(/'/g,"\\'")}')">クリア</button></div>`).join('');
+ $('newEventCatRows').innerHTML=mkEventSelectedCats.map(c=>`<div class="mk-event-budget-row"><span class="mk-event-budget-label">${safeHtml(c)}</span><div class="mk-event-money-field"><input data-event-budget="${safeHtml(c)}" type="text" inputmode="numeric" placeholder="¥" value="${newEventCatBudgets[c]===null||newEventCatBudgets[c]===undefined?'':'¥'+moneyFormatted(newEventCatBudgets[c])}" oninput="mkEventSetAmount('${c.replace(/'/g,"\'")}',this.value)"></div><button class="ghost sm" type="button" onclick="mkEventClear('${c.replace(/'/g,"\\'")}')">クリア</button></div>`).join('');
  document.querySelectorAll('#newEventCatRows input').forEach(input=>{input.addEventListener('input',()=>{if(input.value){const digits=moneyFormatted(input.value);input.value=digits?'¥'+digits:''}})});
  $('mkEventCatCount').querySelector('span').textContent=`カテゴリ選択（${mkEventSelectedCats.length}件）`; $('mkEventCatCount').querySelector('span:last-child').textContent=$('mkEventCatPicker').classList.contains('hidden')?'▼':'▲';
 }
