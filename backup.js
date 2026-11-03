@@ -44,7 +44,7 @@
   }
 
   function checkStorage(forImport = false) {
-    if (typeof mkStorageReady === 'undefined' || !(forImport ? mkCanRestore : mkStorageReady)) throw Error('ブラウザ保存が利用できません。');
+    if (typeof mkStorageReady === 'undefined' || !(forImport ? mkCanRestore : MKStorage.isUnlocked())) throw Error('ブラウザ保存が利用できません。');
     if (typeof mkState !== 'function' || typeof MKStorage === 'undefined' || typeof MKMigrations === 'undefined') throw Error('保存機能が見つかりません。');
   }
 
@@ -53,15 +53,8 @@
       checkStorage();
       const data = structuredClone(mkState());
       validate(data);
-      await MKStorage.save(data);
       const d = new Date();
-      const payload = {
-        format: FORMAT,
-        backupVersion: 1,
-        schemaVersion: MKMigrations.currentVersion,
-        exportedAt: d.toISOString(),
-        data
-      };
+      const payload = await MKStorage.exportEncrypted(data);
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -87,11 +80,18 @@
       checkStorage(true);
       if (file.size > MAX_BYTES) throw Error('ファイルが大きすぎます（10MBまで）。');
       const payload = JSON.parse(await file.text());
-      if (payload?.format !== FORMAT || payload.backupVersion !== 1) throw Error('Money Keeperの対応バックアップではありません。');
-      const data = MKMigrations.renameCategories(validate(MKMigrations.upgrade(payload).data));
+      let restored;
+      if(payload?.format==='money-keeper-encrypted'){
+        restored=await MKSecurity.prompt('バックアップの解除',false,pw=>MKStorage.decryptBackup(payload,pw),true,'このバックアップを保存したときのパスワードを入力してください。');
+        if(restored===null)return;
+      }else{
+        if(MKStorage.production||payload?.format!==FORMAT||payload.backupVersion!==1)throw Error('対応するバックアップではありません。');
+        restored=MKMigrations.upgrade(payload).data;
+      }
+      const data = MKMigrations.renameCategories(validate(restored));
       const answer = confirm(
         '【テスト版】現在のデータをバックアップ内容で全て置き換えます。\n\n' +
-        'バックアップ日時：' + (payload.exportedAt || '不明') + '\n' +
+        'バックアップ日時：' + (payload.savedAt || payload.exportedAt || '不明') + '\n' +
         '記録：' + data.txs.length + '件\n\n' +
         '元に戻すことはできません。現在のデータは別にバックアップした？'
       );
@@ -108,7 +108,7 @@
       document.getElementById('mk-import').disabled=true;
       const locked=[document.querySelector('.app'),document.querySelector('.bottom')].filter(Boolean);
       locked.forEach(el=>el.inert=true);
-      try{await MKStorage.save(structuredClone(data))}
+      try{if(!MKStorage.isUnlocked()){const done=await MKSecurity.prompt('復元後のパスワード設定',true,async pw=>{await MKStorage.recover(data,pw);return true},true);if(!done)return}else await MKStorage.save(structuredClone(data))}
       catch(e){mkStorageReady=readyBefore;throw e}
       finally{locked.forEach(el=>el.inert=false);restoring=false;document.getElementById('mk-import').disabled=!mkCanRestore;}
       status('復元データを保存しました。再読み込みします。');
@@ -129,15 +129,20 @@
     card.innerHTML = `
       <div class="mid">📦 バックアップ・復元（テスト）</div>
       <div class="small" style="margin:8px 0 12px">
-        データをJSONファイルとしてスマホに保存できます。
+        データを暗号化したJSONファイルとしてスマホに保存できます。解除には保存時のパスワードが必要です。
         復元すると、今のブラウザ内データはバックアップの内容に置き換わります。
       </div>
       <button type="button" id="mk-export" class="outline" style="width:100%;margin-bottom:10px">バックアップを保存</button>
       <button type="button" id="mk-import" class="outline" style="width:100%">バックアップから復元</button>
       <input id="mk-import-file" type="file" accept=".json,application/json" style="display:none">
       <div id="mk-backup-status" class="small" role="status" aria-live="polite" style="margin-top:10px"></div>
-      <div class="small" style="margin-top:8px">⚠️ 実データ入力禁止。JSONには記録内容がそのまま入るため、公開GitHubにはアップロードしないでね。</div>`;
+      <div class="small" style="margin-top:8px">⚠️ 実データ入力禁止。暗号化バックアップも公開GitHubにはアップロードしないでください。</div>`;
     if(mkSetupMode){card.querySelector('#mk-export').hidden=true;card.querySelector('#mk-import').disabled=!mkCanRestore;}
+    if(MKStorage.isUnlocked()){
+      const actions=document.createElement('div');actions.className='mk-security-actions';
+      for(const [title,fn] of [['ロックする',MKSecurity.lock],['パスワード変更',MKSecurity.change]]){const b=document.createElement('button');b.type='button';b.className='outline';b.textContent=title;b.onclick=fn;actions.append(b)}
+      const note=document.createElement('p');note.className='small';note.textContent='画面を離れて5分経つとロックします。再読み込み・起動時はパスワードが必要です。';card.append(note,actions);
+    }
     other.appendChild(card);
     card.querySelector('#mk-export').addEventListener('click', exportBackup);
     const fileInput = card.querySelector('#mk-import-file');
@@ -148,6 +153,23 @@
       importBackup(file);
     });
   }
+  window.mkRecoverBackup=()=>{
+    const input=document.createElement('input');input.type='file';input.accept='.json,application/json';
+    input.onchange=async()=>{
+      const file=input.files?.[0];if(!file)return;
+      try{
+        if(file.size>MAX_BYTES)throw Error('ファイルは10MBまでです。');
+        const payload=JSON.parse(await file.text());let data;
+        if(payload?.format==='money-keeper-encrypted')data=await MKSecurity.prompt('バックアップの解除',false,pw=>MKStorage.decryptBackup(payload,pw),true,'バックアップ保存時のパスワードを入力してください。');
+        else if(!MKStorage.production&&payload?.format===FORMAT&&payload.backupVersion===1)data=MKMigrations.upgrade(payload).data;
+        else throw Error('対応するバックアップではありません。');
+        if(!data){location.reload();return}validate(data);
+        if(!confirm('端末の保存データをこのバックアップで置き換えます。よろしいですか？')){location.reload();return}
+        await MKSecurity.prompt('復元後のパスワード設定',true,async pw=>{await MKStorage.recover(data,pw);return true},true);
+        location.reload();
+      }catch(e){alert('復元できませんでした：'+e.message);location.reload()}
+    };input.click();
+  };
   window.mkMountBackup=mount;
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', mount);
   else mount();

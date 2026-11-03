@@ -263,7 +263,7 @@ if(window.visualViewport){window.visualViewport.addEventListener('resize',mkCate
 
 
 function pickEvent(){openPicker('特別費イベント',[{label:'なし',value:''},...eventsData.filter(e=>!e.archived).map(e=>({label:e.name,value:e.name}))],(v,l)=>{mkSetEventTag(v);$('fxBox').classList.toggle('hidden',true)})}
-let mkEventFixed={};try{mkEventFixed=JSON.parse(localStorage.getItem('mk-event-fixed-59')||'{}')||{}}catch(_){}
+let mkEventFixed={};
 // #76: memo-only event controls never assign eventTag or affect event totals.
 const mkEventMemoParts=new Map();
 let mkEventMemoPrevious='';
@@ -341,7 +341,7 @@ $('memo').addEventListener('input',()=>{mkSyncEventMemoParts();if(mkEventMemoMod
 function mkEventMatches(){const d=$('date').value;return (mode==='expense'||(mode==='loan'&&['lend','borrowed'].includes(loanKind))||(mode==='group'&&mkGroupKind==='bill'))&&d?eventsData.filter(e=>!e.archived&&e.start&&e.end&&d>=e.start&&d<=e.end):[]}
 function mkSetEventTag(name){eventTag=name;$('eventBtn').firstElementChild.textContent=name||'なし';mkRenderEventSuggestion()}
 function mkToggleSuggestedEvent(id){const e=eventsData.find(x=>x.id===id);if(e)mkSetEventTag(eventTag===e.name?'':e.name)}
-function mkToggleEventFixed(id){mkEventFixed[id]=!mkEventFixed[id];try{localStorage.setItem('mk-event-fixed-59',JSON.stringify(mkEventFixed))}catch(_){}mkRenderEventSuggestion()}
+function mkToggleEventFixed(id){mkEventFixed[id]=!mkEventFixed[id];mkQueueSave();mkRenderEventSuggestion()}
 function mkRenderEventSuggestion(){mkRefreshMemoEventPicker();const box=$('mkEventSuggestion');if(!box)return;if(mkEventMemoMode()){mkRenderEventMemo(box);return}const hits=mkEventMatches();if(!hits.length){box.classList.add('hidden');return}box.classList.remove('hidden');box.innerHTML=hits.map(e=>{const on=eventTag===e.name;return `<div class="mk-event-suggest-card"><div class="mk-event-suggest-top"><span>🌟特別費イベント期間中</span><button type="button" class="mk-event-fixed ${mkEventFixed[e.id]?'active':''}" onclick="mkToggleEventFixed('${e.id}')" aria-pressed="${!!mkEventFixed[e.id]}">ONで固定</button></div><div class="mk-event-name-row"><button type="button" class="mk-event-name-toggle ${on?'active':''}" onclick="mkToggleSuggestedEvent('${e.id}')" aria-pressed="${on}"><span class="mk-event-state">${on?'ON':'OFF'}</span><span class="mk-event-name-text">${safeHtml(e.name)}</span></button></div></div>`}).join('')}
 
 function autoTagEvent(){const hits=mkEventMatches();if(eventTag&&!hits.some(e=>e.name===eventTag))mkSetEventTag('');else mkRenderEventSuggestion()}
@@ -799,6 +799,7 @@ function mkValidateSettings(c){
  return c;
 }
 function mkValidateStoredSettings(state){
+ if(state.mkEventFixed!==undefined&&(!state.mkEventFixed||typeof state.mkEventFixed!=='object'||Array.isArray(state.mkEventFixed)||!Object.values(state.mkEventFixed).every(v=>typeof v==='boolean')))throw Error('特別費の固定設定が正しくありません。');
  mkMemberValidate(state.mkPaymentGroups);
  if(Array.isArray(state.txs))state.txs.forEach(t=>{mkValidateSplits(t);mkGroupValidate(t,state.mkSettings)});
  mkValidateSettings(state.mkSettings);
@@ -1086,7 +1087,7 @@ function saveEvent(){
 function editEvent(id){let e=eventsData.find(x=>x.id===id);$('eventForm').dataset.editId=id;$('eventFormTitle').textContent='特別費イベントを編集';$('mkEventSaveBtn').textContent='変更を保存';$('newEventName').value=e.name;$('newEventStart').value=e.start||'';$('newEventEnd').value=e.end||'';$('newEventBudget').value=e.budget||'';newEventCatBudgets={...(e.catBudgets||{})};mkEventSelectedCats=[...new Set([...(e.selectedCats||[]),...Object.keys(e.catBudgets||{})])];$('mkEventCatPicker').classList.add('hidden');renderNewEventCatRows();$('eventForm').classList.remove('hidden');mkMountEditingEventForm();refreshMoneyInputs();renderPastEventNames();requestAnimationFrame(()=>window.scrollTo({top:Math.max(0,$('eventForm').getBoundingClientRect().top+window.scrollY-80),behavior:'smooth'}))}
 function resetEventForm(){$('eventForm').dataset.editId='';$('eventFormTitle').textContent='特別費イベントを追加';$('mkEventSaveBtn').textContent='作成';['newEventName','newEventStart','newEventEnd','newEventBudget'].forEach(id=>$(id).value='');newEventCatBudgets={};mkEventSelectedCats=[];$('mkEventCatPicker').classList.add('hidden');renderNewEventCatRows();$('eventError').textContent='';renderPastEventNames()}
 function archiveEvent(id){let e=eventsData.find(x=>x.id===id);e.archived=!e.archived;if(e.archived&&openEventId===id)openEventId='';renderAll()}
-function deleteEvent(id){let e=eventsData.find(x=>x.id===id);if(!e||!e.archived)return;let linked=txs.filter(t=>t.eventTag===e.name).length;if(!confirm('「'+e.name+'」を削除しますか？\n\nイベントの予算・期間などの設定は消えます。'+(linked?'\n紐づく支出記録 '+linked+'件は削除せず、特別費名を記録側に残します。':'')+'\n必要なら同じ名前でイベントを作り直して復活できます。'))return;if(linked){if(!deletedEventNames.includes(e.name))deletedEventNames.push(e.name)}else{deletedEventNames=deletedEventNames.filter(n=>n!==e.name)}delete mkEventFixed[id];try{localStorage.setItem('mk-event-fixed-59',JSON.stringify(mkEventFixed))}catch(_){}eventsData=eventsData.filter(x=>x.id!==id);recurring.forEach(r=>{if(r.event===e.name)r.event=''});if(openEventId===id)openEventId='';renderAll()}
+function deleteEvent(id){let e=eventsData.find(x=>x.id===id);if(!e||!e.archived)return;let linked=txs.filter(t=>t.eventTag===e.name).length;if(!confirm('「'+e.name+'」を削除しますか？\n\nイベントの予算・期間などの設定は消えます。'+(linked?'\n紐づく支出記録 '+linked+'件は削除せず、特別費名を記録側に残します。':'')+'\n必要なら同じ名前でイベントを作り直して復活できます。'))return;if(linked){if(!deletedEventNames.includes(e.name))deletedEventNames.push(e.name)}else{deletedEventNames=deletedEventNames.filter(n=>n!==e.name)}delete mkEventFixed[id];mkQueueSave();eventsData=eventsData.filter(x=>x.id!==id);recurring.forEach(r=>{if(r.event===e.name)r.event=''});if(openEventId===id)openEventId='';renderAll()}
 let editingWishIndex=-1;
 function openWishModal(){
  $('wishModal').classList.remove('hidden');
@@ -1494,7 +1495,7 @@ function mkLoanTodoFromButton(btn){
 
 function mkState(){return {
   mkSettings,
-  txs,loans,cashbook,snapshots,wishes,recurring,eventsData,mkTodos,mkTodoHidden,mkMemoData,mkPaymentGroups,
+  txs,loans,cashbook,snapshots,wishes,recurring,eventsData,mkTodos,mkTodoHidden,mkMemoData,mkPaymentGroups,mkEventFixed,
   billAdjustments,billItemAdjustments,mkPaidBills,deletedEventNames,
   loanArchivedPeople,loanGroups,loanGroupSerial,
   monthlyBudget,categoryBudgets,monthlyBudgetHistory,categoryBudgetHistory,chargeDefaults,
@@ -1505,6 +1506,7 @@ function mkRestoreState(state){
   state=MKMigrations.renameCategories(mkValidateStoredSettings(state));
   mkApplySettings(state.mkSettings);
   mkPaymentGroups=structuredClone(state.mkPaymentGroups||[]);
+  mkEventFixed=structuredClone(state.mkEventFixed||{});
   mkMemoData=state.mkMemoData===undefined?{groups:[],words:[]}:mkMemoValidate(state.mkMemoData);
   const arrayKeys=['txs','loans','cashbook','snapshots','wishes','recurring','eventsData','deletedEventNames','loanArchivedPeople','loanGroups'];
   for(const key of arrayKeys)if(state[key]!==undefined&&!Array.isArray(state[key]))throw new Error('Invalid '+key);
@@ -1533,12 +1535,10 @@ function mkRestoreState(state){
 function mkQueueSave(){
   if(!mkStorageReady)return;
   clearTimeout(mkSaveTimer);
+  MKSecurity.message('保存待ち');
   mkSaveTimer=setTimeout(()=>{
-    MKStorage.save(mkState()).catch(e=>{
-      mkStorageReady=false;
-      console.error('Money Keeper: 保存失敗',e);
-      alert('保存に失敗しました。これ以上の入力はせず、画面を閉じずにバックアップ方法を確認してください。');
-    });
+    mkSaveTimer=null;
+    MKStorage.save(mkState()).then(()=>MKSecurity.message('保存済み')).catch(MKSecurity.failed);
   },200);
 }
 // Some edit actions re-render only their own component; persist those as well.
@@ -1562,7 +1562,7 @@ async function mkBoot(){
   mkRestoreState(saved);
  }catch(e){
   console.error('Money Keeper: 保存データの読み込みに失敗',e);
-  mkShowSetup(mkCanRestore?'保存データを読み込めませんでした。元の保存データは変更していません。いつものブラウザか確認し、再読み込みするか、#89以降の設定入りバックアップから復元してください。':'ブラウザ保存を利用できません。ブラウザの設定を確認してから再読み込みしてください。');return;
+  mkShowSetup('保存データは変更していません。'+e.message+' バックアップがある場合は復元できます。');return;
  }
  try{
   mkDefaultEventTag();
@@ -1571,7 +1571,7 @@ async function mkBoot(){
   if(document.querySelector('.page.active')?.id==='memoManager'){history.replaceState({mkPage:'other'},'',location.href);mkMemoView='words';mkMemoScope='';mkMemoRender();mkMemoHistory()}
   new MutationObserver(()=>initMoneyInputs()).observe(document.body,{childList:true,subtree:true});
   document.documentElement.classList.remove('mk-settings-pending');
-  mkStorageReady=true;window.mkMountBackup?.();mkQueueSave();
+  mkStorageReady=true;window.mkMountBackup?.();MKSecurity.ready();mkQueueSave();
  }catch(e){console.error('Money Keeper: 画面の準備に失敗',e);mkShowSetup('画面を準備できませんでした。保存を停止しています。再読み込みして確認してください。')}
 }
 mkBoot();
