@@ -2104,7 +2104,7 @@ function mkInitialSettings(source){
  const c=structuredClone(mkValidateSettings(source.mkSettings));
  c.accounts=c.accounts.map(a=>({id:a.id,name:a.name,...(a.kind?{kind:a.kind}:{})}));
  c.cards=c.cards.map(a=>({...a,known:{}}));
- if(source.chargeDefaults)c.chargeDefaults=structuredClone(source.chargeDefaults);
+ if(source.chargeDefaults)c.chargeDefaults={...c.chargeDefaults,...structuredClone(source.chargeDefaults)};
  return mkValidateSettings(c);
 }
 function mkInitialBase(source,options={}){
