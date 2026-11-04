@@ -872,7 +872,7 @@ function mkConfirmWithdrawal(card,due){
  if(!confirm(c.name+'の'+fmtMD(due)+'引落を確認しましたか？\n'+c.account+'から'+yen(amount)+'を差し引きます。\n※月の支出には再計上しません。'))return;
  balances[account].v-=amount;cashbook.unshift({date:due,text:c.name+' 引落（確認済み）',delta:-amount,mkBillKey:key});
  mkPaidBills[key]={date:due,amount,account,confirmedAt:new Date().toISOString()};
- renderAll();openBillDetail(card);
+ renderAll();openBillDetail(card,due);
 }
 
 function visibleBills(card){const known=Object.keys(cardDefs[card].known).sort(),today=mkToday();let current=(mkOpening?.cards||[]).filter(r=>r.card===card&&!mkIsPaid(card,r.due)).map(r=>r.due).sort()[0]||known.find(d=>d>=today)||'';if(!current){const [y,m]=today.split('-').map(Number);current=mkDueDate(y,m,mkCardRule(card,today).dueDay);if(current<today)current=nextMonthlyDue(card,current)}const offset=mkBillOffset[card]||0;for(let j=0;j<Math.abs(offset);j++){if(offset>0)current=nextMonthlyDue(card,current);else{const [y,m]=current.split('-').map(Number),[yy,mm]=addMonthsYM(y,m,-1);current=mkDueDate(yy,mm,mkCardRule(card,dateISO(yy,mm,1)).dueDay)}}return [current,nextMonthlyDue(card,current)]}
@@ -890,7 +890,7 @@ function mkCancelBillConfirmation(card,due){
  if(!confirm(cardDefs[card].name+' '+fmtMD(due)+'の請求額の確定を取り消しますか？\n請求額は記録・定期支払いからの予測額に戻ります。元の記録や内訳は削除されません。'))return;
  billAdjustments[key]={status:'cancelled'};
  delete mkTodoHidden['check|'+card+'|'+due];
- renderAll();openBillDetail(card);
+ renderAll();openBillDetail(card,due);
 }
 function mkBillDatePassed(due){return due<=new Date().toLocaleDateString('sv-SE')}
 function mkUndoWithdrawal(card,due){
@@ -901,11 +901,11 @@ function mkUndoWithdrawal(card,due){
  const index=cashbook.findIndex(x=>x.mkBillKey===key);
  if(index>=0)cashbook.splice(index,1);
  else cashbook.unshift({date:new Date().toLocaleDateString('sv-SE'),text:cardDefs[card].name+' 引落取消（調整）',delta:entry.amount});
- delete mkPaidBills[key];renderAll();openBillDetail(card);
+ delete mkPaidBills[key];renderAll();openBillDetail(card,due);
 }
 function mkBillDetailsBlock(card,due){const items=itemsForBill(card,due);return `<details class="mk-bill-items"><summary>記録一覧 <span class="mk-bill-count">（${items.length}件）</span><span class="mk-bill-expand" aria-hidden="true"></span></summary><div class="mk-bill-items-content">${renderBillItems(card,due)}</div></details>`}
-function openBillDetail(card){
- const c=cardDefs[card],[a,b]=visibleBills(card);
+function openBillDetail(card,selectedDue=''){
+ const c=cardDefs[card],[a,b]=selectedDue&&mkValidRecordDate(selectedDue)?[selectedDue,nextMonthlyDue(card,selectedDue)]:visibleBills(card);
  $('billTitle').textContent=c.name+' 請求内訳';
  const nav=`<div class="mk-bill-nav"><button class="outline" onclick="mkShiftBill('${card}',-1)">‹ 前の月</button><button class="outline" onclick="mkShiftBill('${card}',1)">次の月 ›</button></div>`;
  const blocks=[a,b].map((due,i)=>{
@@ -919,7 +919,9 @@ function openBillDetail(card){
   else if(st==='confirmed'&&amt>0)withdrawal=`<div class="mk-bill-withdraw"><button class="outline mk-bill-small" onclick="mkConfirmWithdrawal('${card}','${due}')" ${!mkBillDatePassed(due)?'disabled':''}>引落済みにする</button>${!mkBillDatePassed(due)?'<span class="small">引落日以降に確認できます</span>':''}</div>`;
   return `<div class="billbox">${head}${warning}${reconciliation}${withdrawal}${mkBillDetailsBlock(card,due)}</div>`;
  });
- $('billDetail').innerHTML=nav+blocks.join('');$('billModal').classList.remove('hidden');initMoneyInputs();
+ const paidDates=Object.keys(mkPaidBills).filter(k=>k.startsWith(card+'|')).map(k=>k.slice(card.length+1)).filter(mkValidRecordDate).sort().reverse();
+ const paidHistory=paidDates.length?'<div class="mk-paid-history"><div class="small">引落済みを確認・取り消す</div><div class="chips">'+paidDates.map(d=>'<button type="button" class="outline sm" onclick="openBillDetail(\''+card+'\',\''+d+'\')" aria-pressed="'+(d===a)+'">'+safeHtml(d)+'・'+yen(mkPaidBills[card+'|'+d].amount)+'</button>').join('')+'</div></div>':'';
+ $('billDetail').innerHTML=nav+paidHistory+blocks.join('');$('billModal').classList.remove('hidden');initMoneyInputs();
 }
 function mkShowBillReconcile(card,due){$('mk-reconcile-'+card+'-'+due)?.classList.toggle('hidden')}
 function closeBillDetail(){$('billModal').classList.add('hidden')}
