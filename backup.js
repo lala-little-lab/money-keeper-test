@@ -40,6 +40,7 @@
     }
     if(data.mkMemoData!==undefined)mkMemoValidate(data.mkMemoData);
     mkValidateStoredSettings(data);
+    if(MKStorage.production&&data.mkOpening?.environment!=='production')throw Error('本番では本番用バックアップのみ復元できます。テスト版からは初期設定で設定だけを引き継いでください。');
     return data;
   }
 

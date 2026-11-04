@@ -15,18 +15,18 @@ const MKStorage=(()=>{
  function checkEnvelope(e){if(!e||e.format!==FORMAT||e.version!==1||e.iterations!==ITER||bytes(e.salt).length!==16||bytes(e.iv).length!==12||bytes(e.ciphertext).length<16)throw Error('対応する暗号化バックアップではありません。')}
  async function seal(data,k=key,s=salt){if(!k||!s)throw Error('ロックを解除してください。');const iv=crypto.getRandomValues(new Uint8Array(12));const payload={schemaVersion:MKMigrations.currentVersion,data};const cipher=await crypto.subtle.encrypt({name:'AES-GCM',iv,additionalData:enc.encode(FORMAT+'|1')},k,enc.encode(JSON.stringify(payload)));return {format:FORMAT,version:1,iterations:ITER,salt:b64(s),iv:b64(iv),ciphertext:b64(cipher),revision:crypto.randomUUID(),savedAt:new Date().toISOString()}}
  async function unseal(e,k){checkEnvelope(e);let payload;try{payload=JSON.parse(dec.decode(await crypto.subtle.decrypt({name:'AES-GCM',iv:bytes(e.iv),additionalData:enc.encode(FORMAT+'|1')},k,bytes(e.ciphertext))))}catch{throw Error('パスワードが違うか、ファイルが破損しています。')}
-  if(payload.data===null){if(payload.schemaVersion!==MKMigrations.currentVersion)throw Error('対応していないデータ形式です。');return null}return MKMigrations.upgrade(payload).data;}
+  if(payload.data===null){if(![9,MKMigrations.currentVersion].includes(payload.schemaVersion))throw Error('対応していないデータ形式です。');return null}return MKMigrations.upgrade(payload).data;}
  // Compare-and-swap prevents stale tabs from overwriting newer data/passwords.
  async function commit(e,expected){const db=await open();await new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE),r=store.get(KEY);let conflict=false;r.onsuccess=()=>{const current=r.result;const token=current?.format===FORMAT?current.revision:JSON.stringify(current??null);if(token!==expected){conflict=true;tx.abort();return}store.put(e,KEY)};tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(conflict?Error('別のタブでデータが更新されました。上書きを止めました。この画面のバックアップを保存してから再読み込みしてください。'):tx.error)});revision=e.revision;}
  function save(data){const snapshot=structuredClone(data);queue=queue.catch(()=>{}).then(async()=>{const e=await seal(snapshot);await commit(e,revision)});return queue;}
- async function load(){const e=await raw();if(e?.format===FORMAT){checkEnvelope(e);return MKSecurity.prompt('ロック解除',false,async password=>{const k=await derive(password,bytes(e.salt));const data=await unseal(e,k);key=k;salt=bytes(e.salt);revision=e.revision;return data})}
+ async function load(){const e=await raw();if(e?.format===FORMAT){checkEnvelope(e);return MKSecurity.prompt('ロック解除',false,async password=>{const k=await derive(password,bytes(e.salt));const data=await unseal(e,k);if(production&&data&&data.mkOpening?.environment!=='production')throw Error('テスト記録を本番へ復元できません。初期設定から設定だけを引き継いでください。');key=k;salt=bytes(e.salt);revision=e.revision;return data})}
   if(production&&e)throw Error('本番用保存領域に未対応データがあります。');
   let data=e?MKMigrations.upgrade(e).data:null;
   if(data&&data.mkEventFixed===undefined){try{data.mkEventFixed=JSON.parse(localStorage.getItem('mk-event-fixed-59')||'{}')}catch{data.mkEventFixed={}};mkValidateStoredSettings(data)}
   return MKSecurity.prompt(data?'保存データを暗号化':'パスワード設定',true,async password=>{const s=crypto.getRandomValues(new Uint8Array(16)),k=await derive(password,s),encrypted=await seal(data,k,s);await unseal(encrypted,k);await commit(encrypted,JSON.stringify(e??null));key=k;salt=s;try{if(!production)localStorage.removeItem('mk-event-fixed-59')}catch{}return data});}
  async function decryptBackup(e,password){checkEnvelope(e);return unseal(e,await derive(password,bytes(e.salt)))}
  async function changePassword(data,password){const snapshot=structuredClone(data);queue=queue.catch(()=>{}).then(async()=>{const s=crypto.getRandomValues(new Uint8Array(16)),k=await derive(password,s),e=await seal(snapshot,k,s);await unseal(e,k);await commit(e,revision);key=k;salt=s});return queue;}
- async function recover(data,password){const current=await raw();const expected=current?.format===FORMAT?current.revision:JSON.stringify(current??null);const s=crypto.getRandomValues(new Uint8Array(16)),k=await derive(password,s),e=await seal(structuredClone(data),k,s);await unseal(e,k);await commit(e,expected);key=k;salt=s;}
+ async function recover(data,password){if(production&&data?.mkOpening?.environment!=='production')throw Error('本番では本番用バックアップのみ復元できます。テスト版からは初期設定で設定だけを引き継いでください。');const current=await raw();const expected=current?.format===FORMAT?current.revision:JSON.stringify(current??null);const s=crypto.getRandomValues(new Uint8Array(16)),k=await derive(password,s),e=await seal(structuredClone(data),k,s);await unseal(e,k);await commit(e,expected);key=k;salt=s;}
  return {recover,available:async()=>{await open();return true},load,save,exportEncrypted:data=>seal(structuredClone(data)),decryptBackup,changePassword,flush:()=>queue,forget:()=>{key=null;salt=null},isUnlocked:()=>!!key,production};
 })();
 
@@ -66,7 +66,7 @@ const MKSecurity=(()=>{
  async function flush(){clearTimeout(mkSaveTimer);mkSaveTimer=null;await MKStorage.flush();if(mkSetupMode)return;await MKStorage.save(mkState())}
  async function lock(){
   if(locking||!MKStorage.isUnlocked())return;
-  if(busy||active||mkSettingsBusy||mkMemberBusy||(!mkStorageReady&&!mkSetupMode&&document.getElementById('mkSaveBar').hidden)){clearTimeout(timer);timer=setTimeout(lock,250);return}
+  if(busy||active||mkSettingsBusy||mkMemberBusy||mkInitialBusy||(!mkStorageReady&&!mkSetupMode&&document.getElementById('mkSaveBar').hidden)){clearTimeout(timer);timer=setTimeout(lock,250);return}
   locking=true;cover(true);clearTimeout(timer);
   try{
    // Failed writes must remain recoverable; retry snapshots the current in-memory state.
@@ -82,11 +82,11 @@ const MKSecurity=(()=>{
  }
  function failed(e){mkStorageReady=false;message('保存できていません。画面を閉じずに再試行するか、その他から暗号化バックアップを保存してください。 '+(e?.message||'保存エラー'));document.getElementById('mkSaveBar').hidden=false;document.getElementById('mkRetrySave').hidden=false}
  async function retry(){try{clearTimeout(mkSaveTimer);await MKStorage.flush().catch(()=>{});if(!mkSetupMode)await MKStorage.save(mkState());mkStorageReady=!mkSetupMode;message('保存済み');document.getElementById('mkSaveBar').hidden=true;document.getElementById('mkRetrySave').hidden=true}catch(e){failed(e)}}
- async function change(){if(locking||busy||active||!mkStorageReady||mkSettingsBusy||mkMemberBusy)return;clearTimeout(mkSaveTimer);try{await flush()}catch(e){failed(e);return}mkStorageReady=false;await prompt('パスワード変更',true,async password=>{await MKStorage.changePassword(mkState(),password);return true},true);mkStorageReady=true;message('保存済み')}
+ async function change(){if(locking||busy||active||!mkStorageReady||mkSettingsBusy||mkMemberBusy||mkInitialBusy)return;clearTimeout(mkSaveTimer);try{await flush()}catch(e){failed(e);return}mkStorageReady=false;await prompt('パスワード変更',true,async password=>{await MKStorage.changePassword(mkState(),password);return true},true);mkStorageReady=true;message('保存済み')}
  function ready(){if(document.hidden){hiddenAt=Date.now();cover(true);timer=setTimeout(lock,300000)}}
  document.addEventListener('visibilitychange',()=>{
   if(!MKStorage.isUnlocked())return;
-  if(document.hidden){if(hiddenAt===null)hiddenAt=Date.now();cover(true);clearTimeout(timer);timer=setTimeout(lock,300000);if(mkStorageReady&&!active&&!mkSettingsBusy&&!mkMemberBusy)flush().catch(failed)}
+  if(document.hidden){if(hiddenAt===null)hiddenAt=Date.now();cover(true);clearTimeout(timer);timer=setTimeout(lock,300000);if(mkStorageReady&&!active&&!mkSettingsBusy&&!mkMemberBusy&&!mkInitialBusy)flush().catch(failed)}
   else if(hiddenAt!==null){if(Date.now()-hiddenAt>=300000)lock();else{hiddenAt=null;clearTimeout(timer);cover(false)}}
  });
  window.addEventListener('pageshow',e=>{if(e.persisted)location.reload()});
